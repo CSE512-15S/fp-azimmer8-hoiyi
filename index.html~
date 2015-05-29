@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title> Global Warming Data </title>
+<style>
+    
+    #play {
+        position: relative;
+        top: 25px;
+        left: 400px
+    }
+
+    #play {
+        left: 240px;
+    }
+
+    #clock {
+        position: relative;
+    }
+  
+	.d3-slider{
+	width: 400px;
+	margin-left:10px;
+	margin-right:auto;
+	}
+	
+  </style>
+  
+<h2> CO2 Emission across Countries from 1960 to 2008  </h2>
+<body>
+<p>   This is a map of CO2 intensity (in millions of tonnes of CO2 emissions per 10,000 USD (1990 dollars) economic output) by country by year from 1960 to 2008. CO2 intensity is a measure of carbon emissions that is more consistent across countries of varying levels of wealth than CO2 emissions per person.</p>
+
+<p>Move the slider to select a year for viewing emissions. The light grey color represents missing data.</p>
+
+<p>Demographic variables relevant to CO2 emissions, such as GDP and population size, are shown when hovering over a country.</p>
+
+
+<div class="d3-slider">
+<link rel="stylesheet" href="main.css" />
+<link rel="stylesheet" href="slider.css" />  
+ <label for="slider" >CO2 Emission for Year: </label>
+ <button id = "play" > play </button>
+ <!-- <span id = "clock">year</span> --!> 
+ <span id="clock" style="color:#f6931f; font-weight:bold; font-size:24px" >1960</span>
+ <input id="slider",class="slider" type="range" min="1960" max="2008" value="1960" step="1" herf="newslider.css" />
+</div>
+ <div id="slider-div"></div>
+ <div id="container1" style="position: relative; width: 80%; max-height: 450px;"></div>
+<!--<div id="wrapper">
+    <button id = "play">play</button>
+</div> -->   
+
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="http://d3js.org/topojson.v1.min.js"></script>
+  <script src="http://tipstrategies.com/interactive/2014_map/lib/d3.slider.js"></script>
+  <!-- I recommend you host this file on your own, since this will change without warning -->
+  <script src="http://datamaps.github.io/scripts/datamaps.world.min.js?v=1"></script>
+  <script src="http://datamaps.github.io/scripts/datamaps.world.min.js"></script>
+  <script src="https://raw.github.com/fryn/html5slider/master/html5slider.js"></script>
+  <script type="text/javascript"></script>
+  
+
+<!--<script>    
+onload = function() {
+  var $ = function(id) { return document.getElementById(id); };
+  $('slider').oninput = function() { $('clock').innerHTML = this.value; };
+  $('slider').oninput();
+};
+</script>-->
+ 
+<p>CO2 emissions data comes from the <a href="http://www.globalcarbonproject.org/carbonbudget/index.htm">Global Carbon Budget</a>. GDP Data comes from the <a href="http://www.ggdc.net/maddison/maddison-project/home.htm">Maddison Project</a>. Population data comes from the <a href="http://esa.un.org/wpp/">UN World Population Prospects, 2012 edition</a>.</p>
+
+     <script>
+var width = 960,
+    height = 600;
+function numberWithCommas(x) {
+    // Taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
+    if (x) {
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    } else {
+        return x;
+    }
+}
+
+
+//animateMap();
+
+var currentYear = 1960, playing = false;
+
+var
+//color_qmissing = 'rgb(216,149,149)',
+//color_qmissing = 'rgb(246,200,200)',
+color_qmissing = '#ede4e4'
+color_q0 = 'rgb(198,219,239)',
+color_q1 = 'rgb(158,202,225)',
+color_q2 = 'rgb(107,174,214)',
+color_q3 = 'rgb(66,146,198)',
+color_q4 = 'rgb(33,113,181)',
+color_q5 = 'rgb(8,81,156)',
+color_q6 = 'rgb(8,48,107)',
+colorScale = [
+  color_q6,
+  color_q5,
+  color_q4,
+  color_q3,
+  color_q2,
+  color_q1,
+  color_q0
+] // array used to generate color scale
+var quantize = d3.scale.threshold()
+.domain([0.38, 0.68, 0.97, 1.33, 1.91, 2.99, 17.14])
+.range(d3.range(7).map(function(i) { return "q" + i; }));
+var jsonMilExp = {};
+var map = new Datamap({
+  element: document.getElementById('container1'),
+  projection: 'mercator',
+  fills: {
+    defaultFill: color_qmissing, //'rgb(222,235,247)',
+//    defaultFill: 'rgb(216,149,149)', //'rgb(222,235,247)',
+    // define colors for quantized scale
+    qmissing: color_qmissing,
+    q0: color_q0,
+    q1: color_q1,
+    q2: color_q2,
+    q3: color_q3,
+    q4: color_q4,
+    q5: color_q5,
+    q6: color_q6
+  },
+  data: jsonMilExp,
+  geographyConfig: {
+     //highlightOnHover: False,
+     highlightFillColor: '00FFFFFF',
+     highlightBorderColor: '#ffa500',
+    popupTemplate: function(geo, data) {
+        if (data == null) {
+            return '<div class="hoverinfo"><strong>No data available for ' + geo.properties.name + '</strong></div>';
+        } else {
+            if (data.Tech) {
+                str_tech =  '<br/>CO2 Intensity: ' + data.Tech + ' million tonnes per $10,000';
+            } else {
+                str_tech = '<br/>CO2 Intensity data missing';
+            }
+            if (data.GDP) {
+                str_gdp =  '<br/>GDP: $' + numberWithCommas(data.GDP);
+            } else {
+                str_gdp = '<br/>GDP data missing';
+            }
+ 
+            return ['<div class="hoverinfo"><strong>', 
+                   geo.properties.name, 
+               '<br/>Year: ' + data.Year, 
+//               '<br/>CO2 Intensity: ' + data.Tech + ' million tonnes per $10,000',
+               str_tech,
+//               '<br/>GDP per capita: $' + numberWithCommas(data.GDP),
+               str_gdp,
+               '<br/>Population: ' + numberWithCommas(Math.round(1000*data.Pop)),
+                    '</strong></div>'].join('');
+        }
+}
+},
+  highlightBorderWidth: 4,
+  responsive: true
+});
+var fullData = {
+    1960: {},
+    1961: {},
+    1962: {},
+    1963: {},
+    1964: {},
+    1965: {},
+    1966: {},
+    1967: {},
+    1968: {},
+    1969: {},
+    1970: {},
+    1971: {},
+    1972: {},
+    1973: {},
+    1974: {},
+    1975: {},
+    1976: {},
+    1977: {},
+    1978: {},
+    1979: {},
+    1980: {},
+    1981: {},
+    1982: {},
+    1983: {},
+    1984: {},
+    1985: {},
+    1986: {},
+    1987: {},
+    1988: {},
+    1989: {},
+    1990: {},
+    1991: {},
+    1992: {},
+    1993: {},
+    1994: {},
+    1995: {},
+    1996: {},
+    1997: {},
+    1998: {},
+    1999: {},
+    2000: {},
+    2001: {},
+    2002: {},
+    2003: {},
+    2004: {},
+    2005: {},
+    2006: {},
+    2007: {},
+    2008: {},
+    2009: {},
+    2010: {}
+};
+var get_fill = function(tech_val) {
+//function get_fill(tech_val) {
+    if (tech_val) {
+        return quantize(tech_val);
+    } else {
+        return 'qmissing';
+    }
+}
+var load_data = function(Year) {
+    console.log(get_fill(NaN));
+    d3.csv("data_co2.csv", function (error, data) {
+          data
+            .forEach(function(d) {
+                // create data for map
+                fullData[d.Year][d.Isocode] = {
+                  Iso: d.Isocode,
+                  fillKey: get_fill(+d.Tech),
+                  Year: +d.Year,
+                  Tech: +d.Tech,
+                  GDP: +d.GDP,
+                  Pop: +d.PopTotal
+                };
+              });
+
+        for (var k in fullData) {
+            for (var k2 in fullData[k]) {
+                fullData[k][k2].fillKey = get_fill(fullData[k][k2].Tech);
+            }
+        }
+        map.updateChoropleth(fullData[Year]);
+    });   
+};
+var update_data = function(Year) {
+    map.updateChoropleth(fullData[Year]);
+};
+
+load_data(1960);
+//update_data(1960);
+
+d3.selectAll("input").on("change", function change() {
+    var Year = this.value;
+    update_data(Year);
+    d3.select('#clock').html(Year);  // update the clock
+});
+
+
+function sequenceMap() {
+
+//    var dataRange = getDataRange(); // get the min/max values from the current year's range of data values
+      //var update_data = function(Year) {
+      //    map.updateChoropleth(fullData[Year]);
+      //};
+    d3.selectAll("input").on("change", function change() {
+    var Year = this.value;
+    update_data(Year);
+}).duration(0);
+    //d3.selectAll('.country').transition()  //select all the countries and prepare for a transition to new values
+      //d3.selectAll("input").on("change", function change() {
+      //var Year = this.value;
+      //return update_data(Year);
+//});
+      //.duration(750)  // give it a smooth time period for the transition
+      //.attr('fill-opacity', function(d) {
+      //return update_data(Year);  // the end color value
+      //})
+}
+
+var period = [];
+for (var i = 1960; i != 2011; ++i) period.push(i);
+
+function animateMap() {
+
+  var timer;  // create timer object
+  d3.select('#play')  
+    .on('click', function() {  // when user clicks the play button
+      if(playing == false) {  // if the map is currently playing
+        timer = setInterval(function(){   // set a JS interval
+          if(currentYear < period.length-1) {  
+              currentYear += 1;  // increment the current attribute counter
+          } else {
+              currentYear = 0;  // or reset it to zero
+          } 
+          update_data(period[currentYear]);
+
+          d3.select('#clock').html(period[currentYear]);  // update the clock
+        }, 1000);
+        //d3.select("#slider-div .d3-slider-handle");
+        //.style("left", 100*currentYear/period.length + "%" );
+        //slider.value(currentYear);
+
+        d3.select(this).html('stop');  // change the button label to stop
+        playing = true;   // change the status of the animation
+      } else {    // else if is currently playing
+        clearInterval(timer);   // stop the animation by clearing the interval
+        d3.select(this).html('play');   // change the button label to play
+        playing = false;   // change the status again
+      }
+  });
+}
+
+
+function createSlider(){
+
+  sliderScale = d3.scale.linear().domain([0,period.length-1]);
+
+  //var val = slider ? slider.value() : 0;
+
+  slider = d3.slider()
+    .scale( sliderScale )
+    .on("slide",function(event,value){
+      if ( isPlaying ){
+        clearInterval(interval);
+      }
+      currentFrame = value;
+      drawMonth( orderedColumns[value], d3.event.type != "drag" );
+    })
+    .on("slideend",function(){
+      if ( isPlaying ) animate();
+      d3.select("#slider-div").on("mousemove",sliderProbe)
+    })
+    .on("slidestart",function(){
+      d3.select("#slider-div").on("mousemove",null)
+    })
+    .value(val);
+
+  d3.select("#slider-div").remove();
+
+  d3.select("#slider-container")
+    .append("div")
+    .attr("id","slider-div")
+    .style("width",dateScale.range()[1] + "px")
+    .on("mousemove",sliderProbe)
+    .on("mouseout",function(){
+      d3.select("#slider-probe").style("display","none");
+    })
+    .call( slider );
+
+  d3.select("#slider-div a").on("mousemove",function(){
+    d3.event.stopPropagation();
+  })
+
+  /*var sliderAxis = d3.svg.axis()
+    .scale( dateScale )
+    .tickValues( dateScale.ticks(period.length).filter(function(d,i){
+      // ticks only for beginning of each year, plus first and last
+      return d.getMonth() == 0 || i == 0 || i == period.length-1;
+    }))
+    .tickFormat(function(d){
+      // abbreviated year for most, full month/year for the ends
+      if ( d.getMonth() == 0 ) return "'" + d.getFullYear().toString().substr(2);
+      return months[d.getMonth()] + " " + d.getFullYear();
+    })
+    .tickSize(10)
+
+  d3.select("#axis").remove();*/
+
+  d3.select("#slider-container")
+    .append("svg")
+    .attr("id","axis")
+    .attr("width",dateScale.range()[1] + sliderMargin*2 )
+    .attr("height",25)
+    .append("g")
+      .attr("transform","translate(" + (sliderMargin+1) + ",0)")
+      .call(sliderAxis);
+
+  /*d3.select("#axis > g g:first-child text").attr("text-anchor","end").style("text-anchor","end");
+  d3.select("#axis > g g:last-of-type text").attr("text-anchor","start").style("text-anchor","start");*/
+}
+
+createSlider();
+
+
+
+/*var currentYear = 1960;
+    isPlaying = false;
+
+function animateMap(){
+  interval = setInterval( function(){
+    currentYear++;
+
+    if ( currentYear == 2010 ) currentYear = 1960;
+
+    d3.select("#slider-div .d3-slider-handle")
+      .style("left", 100*currentYear/period.length + "%" );
+    slider.value(currentYear)
+
+    update_data( period[ currentYear ]);
+
+    if ( currentYear == 2010 - 1 ){
+      isPlaying = false;
+      d3.select("#play").classed("pause",false).attr("title","Play animation");
+      clearInterval( interval );
+      return;
+    }
+
+  },50);
+}
+
+    d3.select("#play")
+      .attr("title","Play animation")
+      .on("click",function(){
+        if ( !isPlaying ){
+          isPlaying = true;
+          d3.select(this).classed("pause",true).attr("title","Pause animation");
+          animate();
+        } else {
+          isPlaying = false;
+          d3.select(this).classed("pause",false).attr("title","Play animation");
+          clearInterval( interval );
+        }
+      });*/
+
+
+// append the container for the legend
+d3.select('svg')
+  .append('g')
+  .attr('class', 'legend');
+var
+  legendBarWidth = 30,
+  legendBarHeight = 10,
+  legendOffsetX = 30,
+  legendOffsetY = 400;
+var date = ["2.99" + "-" + "17.14", "1.91" + "-" + "2.99",
+   "1.33" + "-" + "1.91", "0.97" + "-" + "1.33", "0.68" + "-" + "0.97",
+    "0.38" + "-" + "0.68", "0" + "-" + "0.38" ];
+// draw the legend
+d3.select('.legend').selectAll('.legend')
+.data(colorScale)
+.enter()
+  .append('rect')
+    .attr('x', legendOffsetX)
+    .attr('y', function(d,i) {
+      return legendOffsetY + legendBarHeight*i;
+    })
+    .attr('width', legendBarWidth)
+    .attr('height', legendBarHeight)
+    .attr('fill', function(d){ return d; });
+d3.select('.legend').selectAll('.legend')
+.data(colorScale)
+.enter()
+  .append('text')
+  .text(function(d,i){
+      var quantizedRange = quantize.invertExtent('q'+i);
+      return date[i];
+    })
+    .attr('x', legendOffsetX+(legendBarWidth*1.25))
+    .attr('y', function(d,i){
+      return legendOffsetY + (legendBarHeight*0.9) + legendBarHeight*i;
+    })
+    .attr("font-family", "sans-serif")
+    .attr("font-size", "10px")
+    .attr("fill", "black");
+     
+        d3.select('.legend').selectAll('.legend')
+        .data(colorScale)
+        .enter()
+          .append('text')
+            .text("CO2 Intensity")
+            .attr("class", "caption")
+            .attr('x', legendOffsetX)
+            .attr('y', legendOffsetY-0.8)
+            .attr("font-family", "sans-serif")
+            .attr("font-size", "12px")
+            .attr("fill", "black");
+            
+window.onload = animateMap();
+//animateMap();
+
+  </script>
+ 
+</body>
