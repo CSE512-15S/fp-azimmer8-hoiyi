@@ -154,7 +154,7 @@ var make_scatter = function(dataset_object) {
 };
 
 
-var make_lines = function(dataset, varx, vary) {
+var make_lines = function(dataset, varx, vary, logy=false) {
     var year_format = d3.format("d");
     var xdomain = [];
 
@@ -172,13 +172,30 @@ var make_lines = function(dataset, varx, vary) {
     if (vary === "Year") {
         ydomain = [1960, 2010];
     } else {
-        ydomain = [0, 1.04*d3.max(dataset, function(d) {
+        if (logy) {
+            ydomain = [d3.min(dataset,function(d) {
+                       var min_tmp = d[0][vary];
+                       for (var i = 0; i < d.length; i++) {
+                           min_tmp = d3.min([min_tmp, d[i][vary]]);
+                       }
+                       return min_tmp;
+                   }),
+                   d3.max(dataset, function(d) {
                        var max_tmp = 0;
                        for (var i = 0; i < d.length; i++) {
                            max_tmp = d3.max([max_tmp, d[i][vary]]);
                        }
                        return max_tmp;
                    })];
+        } else {
+            ydomain = [0, 1.04*d3.max(dataset, function(d) {
+                       var max_tmp = 0;
+                       for (var i = 0; i < d.length; i++) {
+                           max_tmp = d3.max([max_tmp, d[i][vary]]);
+                       }
+                       return max_tmp;
+                   })];
+        }
     }
  
 
@@ -187,9 +204,16 @@ var make_lines = function(dataset, varx, vary) {
         .domain(xdomain)
         .range([padding_w, w - padding_w]);
 
-    var y = d3.scale.linear()
-        .domain(ydomain)
-        .range([h - padding_h, 0]);
+// TODO: fix up log scale. make optional, make the range based on the data, put in axis labels
+    if (logy) {
+        var y = d3.scale.log()
+            .domain(ydomain)
+            .range([h - padding_h, 0]);
+    } else {
+        var y = d3.scale.linear()
+                  .domain(ydomain)
+                  .range([h - padding_h, 0]);
+    }
 
     // TODO: allow the variable to be selected
     var line = d3.svg.line()
@@ -200,9 +224,16 @@ var make_lines = function(dataset, varx, vary) {
     var xScale = d3.scale.linear()
       .domain(xdomain)
       .range([padding_w, w - padding_w]);
-    var yScale = d3.scale.linear()
-      .domain(ydomain)
-      .range([h - padding_h, 0]);
+    if (logy) {
+        var yScale = d3.scale.log()
+          .domain(ydomain)
+          .range([h - padding_h, 0]);
+    } else {
+        var yScale = d3.scale.linear()
+          .domain(ydomain)
+          .range([h - padding_h, 0]);
+    }
+
     if (varx === "Year") {
         var xAxis = d3.svg.axis()
                     .scale(xScale)
@@ -213,7 +244,7 @@ var make_lines = function(dataset, varx, vary) {
                     .scale(xScale)
                     .orient("bottom");
     }
-     if (vary === "Year") {
+    if (vary === "Year") {
         var yAxis = d3.svg.axis()
                     .scale(yScale)
                     .orient("left")
@@ -224,8 +255,11 @@ var make_lines = function(dataset, varx, vary) {
                     .orient("left");
     }
 
+    // Clean up before adding new axes:
     svg.selectAll("g")
        .remove();
+    svg.selectAll("text").attr("class", "x label").remove();
+    svg.selectAll("text").attr("class", "y label").remove();
     svg.append("g")
        .attr("class", "axis")
        .attr("transform", "translate(0," + (h - padding_h) + ")")
@@ -251,7 +285,7 @@ var make_lines = function(dataset, varx, vary) {
 
 // add x-axis label:
     svg.append("text")
-       .attr("class", "x label")
+       .attr("class", "x title")
        .attr("text-anchor", "middle")
        .attr("x", w/2)
        .attr("y", h)
@@ -306,7 +340,6 @@ var make_lines = function(dataset, varx, vary) {
            d3.select("#tooltip").remove();
        });
 
-    console.log("haha")
 };
 
 
