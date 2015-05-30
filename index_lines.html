@@ -36,6 +36,8 @@ X Variable:
   <option value="CO2">Carbon emissions</option>
   <option value="Tech">Intensity (Carbon / GDP)</option>
 </select>
+X on log scale? <input id="x-log-scale" type="checkbox" value="log-scale">
+
 
 <br/>
 
@@ -47,7 +49,12 @@ Y Variable:
   <option value="GDP">GDP per capita</option>
   <option value="CO2">Carbon emissions</option>
 </select>
- 
+Y on log scale? <input id="y-log-scale" type="checkbox" value="log-scale">
+
+ <br/>
+
+<button type="button" id="swap-axes">Swap axes</button>
+
  <br/>
  <br/>
  <br/>
@@ -154,20 +161,39 @@ var make_scatter = function(dataset_object) {
 };
 
 
-var make_lines = function(dataset, varx, vary, logy=false) {
+var make_lines = function(dataset, varx, vary) {
+
     var year_format = d3.format("d");
     var xdomain = [];
+    var ydomain = [];
 
     if (varx === "Year") {
         xdomain = [1960, 2010];
     } else {
-        xdomain = [0, 1.04*d3.max(dataset, function(d) {
-                       var max_tmp = 0;
+        if (logx) {
+            xdomain =  [d3.min(dataset,function(d) {
+                       var min_tmp = d[0][varx];
                        for (var i = 0; i < d.length; i++) {
-                           max_tmp = d3.max([max_tmp, d[i][varx]]);
+                           min_tmp = d3.min([min_tmp, d[i][varx]]);
                        }
-                       return max_tmp;
-                   })];
+                       return min_tmp;
+                   }),
+                   d3.max(dataset, function(d) {
+                           var max_tmp = 0;
+                           for (var i = 0; i < d.length; i++) {
+                               max_tmp = d3.max([max_tmp, d[i][varx]]);
+                           }
+                           return max_tmp;
+                       })];
+        } else {
+            xdomain = [0, 1.04*d3.max(dataset, function(d) {
+                           var max_tmp = 0;
+                           for (var i = 0; i < d.length; i++) {
+                               max_tmp = d3.max([max_tmp, d[i][varx]]);
+                           }
+                           return max_tmp;
+                       })];
+        }
     }
     if (vary === "Year") {
         ydomain = [1960, 2010];
@@ -200,15 +226,21 @@ var make_lines = function(dataset, varx, vary, logy=false) {
  
 
     // todo: allow for log scale
-    var x = d3.scale.linear()
-        .domain(xdomain)
-        .range([padding_w, w - padding_w]);
+    if (logx) {
+        var x = d3.scale.log()
+                  .domain(xdomain)
+                  .range([padding_w, w - padding_w]);
+    } else {
+        var x = d3.scale.linear()
+                  .domain(xdomain)
+                  .range([padding_w, w - padding_w]);
+    }
 
 // TODO: fix up log scale. make optional, make the range based on the data, put in axis labels
     if (logy) {
         var y = d3.scale.log()
-            .domain(ydomain)
-            .range([h - padding_h, 0]);
+                  .domain(ydomain)
+                  .range([h - padding_h, 0]);
     } else {
         var y = d3.scale.linear()
                   .domain(ydomain)
@@ -221,9 +253,15 @@ var make_lines = function(dataset, varx, vary, logy=false) {
         .y(function(d) { return y(d[vary]); });
 
 
-    var xScale = d3.scale.linear()
-      .domain(xdomain)
-      .range([padding_w, w - padding_w]);
+    if (logx) {
+        var xScale = d3.scale.log()
+          .domain(xdomain)
+          .range([padding_w, w - padding_w]);
+    } else {
+        var xScale = d3.scale.linear()
+          .domain(xdomain)
+          .range([padding_w, w - padding_w]);
+    }
     if (logy) {
         var yScale = d3.scale.log()
           .domain(ydomain)
@@ -394,6 +432,10 @@ var varx = d3.select("#x-variable")
              .property("value");
 var vary = d3.select("#y-variable")
              .property("value");
+var logx = d3.select("#x-log-scale")
+             .property("checked");
+var logy = d3.select("#y-log-scale")
+             .property("checked");
 
 //load_data(1995);
 load_data("USA");
@@ -409,6 +451,42 @@ d3.select("#y-variable")
         make_lines(countryArray, varx, vary);
       });
 
+// TODO: create multiple buttons for log scale which are mutually exclusive, or something
+d3.select("#x-log-scale")
+  .on("change", function() {
+        console.log("logx change detected");
+        logx = d3.select(this).property("checked");
+        make_lines(countryArray, varx, vary);
+      });
+d3.select("#y-log-scale")
+  .on("change", function() {
+        console.log("logy change detected");
+        logy = d3.select(this).property("checked");
+        make_lines(countryArray, varx, vary);
+      });
+
+//<button type="button" id="swap-axes">Swap axes</button>
+d3.select("#swap-axes")
+  .on("click", function() {
+          console.log("Swap axes button clicked");
+          var var_tmp = varx;
+          varx = vary;
+          vary = var_tmp;
+          var log_tmp = logx;
+          logx = logy;
+          logy = log_tmp;
+          // swap variables in drop-down menus
+          xvar_tmp = document.getElementById("x-variable").value;
+          document.getElementById("x-variable").value =
+              document.getElementById("y-variable").value;
+          document.getElementById("y-variable").value = xvar_tmp;
+          // swap checks for x and y log scale checkboxes
+          xlogscale_tmp = document.getElementById("x-log-scale").checked;
+          document.getElementById("x-log-scale").checked =
+              document.getElementById("y-log-scale").checked;
+          document.getElementById("y-log-scale").checked = xlogscale_tmp;
+          make_lines(countryArray, varx, vary);
+      });
 
 
 var fullData = {
