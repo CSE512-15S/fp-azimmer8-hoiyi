@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title> Global Warming Data </title>
+ 
+<h2> CO2 Emission across Countries from 1960 to 2008  </h2>
+
+<head>
+<style type="text/css">
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+}
+
+.line {
+    fill: none;
+    stroke: steelblue;
+    stroke-width: 1.5px;
+}
+
+.axis text {
+    font-family: sans-serif;
+    font-size: 11px;
+}
+</style>
+</head>
+<body>
+
+X Variable:
+<select id="x-variable">
+  <option value="Year">Year</option>
+  <option value="Population">Population</option>
+  <option value="GDP">GDP per capita</option>
+  <option value="CO2">Carbon emissions</option>
+  <option value="Tech">Intensity (Carbon / GDP)</option>
+</select>
+
+<br/>
+
+Y Variable:
+<select id="y-variable">
+  <option value="Tech">Intensity (Carbon / GDP)</option>
+  <option value="Year">Year</option>
+  <option value="Population">Population</option>
+  <option value="GDP">GDP per capita</option>
+  <option value="CO2">Carbon emissions</option>
+</select>
+ 
+ <br/>
+ <br/>
+ <br/>
+ <div id="container1" style="position: relative; width: 80%; max-height: 450px;"></div>
+
+ 
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="http://d3js.org/topojson.v1.min.js"></script>
+  <script type="text/javascript"></script>
+ 
+
+<script>    
+/*
+TODO: Carbon emissions are by person. Change it!!
+TODO!!
+*/
+
+
+/* A lot of code is taken from "Interactive Data Visualization for the Web"
+by Scott Murray */
+
+var w = 500;
+var h = 500;
+var padding_h = 40;
+var padding_w = 60;
+var svg = d3.select("body")
+            .append("svg")
+            .attr("width", w)
+            .attr("height", h);
+
+// todo: when initially plotting, get the selections from the drop-down. or force the drop-down to agree.
+
+var make_scatter = function(dataset_object) {
+    var dataset = Object.keys(dataset_object).map(function (key) {
+        return dataset_object[key]
+    });
+
+    var xScale = d3.scale.linear()
+      .domain([0, 1.04*d3.max(dataset, function(d) { return d.GDP; })])
+      .range([padding_w, w - padding_w]);
+    var yScale = d3.scale.linear()
+      .domain([0, 1.04*d3.max(dataset, function(d) { return d.Tech; })])
+      //.range([h - padding_h, padding_h]);
+      .range([h - padding_h, 0]);
+    var xAxis = d3.svg.axis()
+                .scale(xScale)
+                .orient("bottom");
+    var yAxis = d3.svg.axis()
+                .scale(yScale)
+                .orient("left");
+
+    svg.selectAll("circle")
+       .data(dataset)
+       .enter()
+       .append("circle")
+       .attr({
+           cx: function(d) {
+               //return d[0];
+               return xScale(d.GDP);
+           },
+           cy: function(d) {
+               //return d[1];
+               return yScale(d.Tech);
+           },
+           r: 4,
+           fill: "steelblue"
+       })
+       .on("mouseover", function(d) {
+           var xPosition = parseFloat(d3.select(this).attr("cx"));
+           var yPosition = parseFloat(d3.select(this).attr("cy")) - 10;
+
+           d3.select(this)
+             .attr("fill", "orange");
+
+           svg.append("text")
+              .attr("id", "tooltip")
+              .attr("x", xPosition)
+              .attr("y", yPosition)
+              .attr("text-anchor", "middle")
+              .attr("font-family", "sans-serif")
+              .attr("font-size", "11px")
+              .attr("font-weight", "bold")
+              .attr("fill", "black")
+              .text("Country: " + d.Iso + 
+                    ", Year: " + d.Year);
+              /*.text(function(d) {
+                  return "Country: " + d.Iso;
+              });*/
+       })
+       .on("mouseout", function() {
+           d3.select(this)
+             .attr("fill", "steelblue");
+
+           d3.select("#tooltip").remove();
+       });
+
+    svg.append("g")
+       .attr("class", "axis")
+       .attr("transform", "translate(0," + (h - padding_h) + ")")
+       .call(xAxis);
+    svg.append("g")
+       .attr("class", "axis")
+       .attr("transform", "translate(" + padding_w + ",0)")
+       .call(yAxis);
+
+};
+
+
+var make_lines = function(dataset, varx, vary) {
+    var year_format = d3.format("d");
+    var xdomain = [];
+
+    if (varx === "Year") {
+        xdomain = [1960, 2010];
+    } else {
+        xdomain = [0, 1.04*d3.max(dataset, function(d) {
+                       var max_tmp = 0;
+                       for (var i = 0; i < d.length; i++) {
+                           max_tmp = d3.max([max_tmp, d[i][varx]]);
+                       }
+                       return max_tmp;
+                       // return d[varx];
+                   })];
+    }
+    if (vary === "Year") {
+        ydomain = [1960, 2010];
+    } else {
+        ydomain = [0, 1.04*d3.max(dataset, function(d) {
+                       var max_tmp = 0;
+                       for (var i = 0; i < d.length; i++) {
+                           max_tmp = d3.max([max_tmp, d[i][vary]]);
+                       }
+                       return max_tmp;
+                   })];
+    }
+ 
+
+    // todo: generalize
+    var x = d3.scale.linear()
+//        .domain([1960, 2010])
+        .domain(xdomain)
+        .range([padding_w, w - padding_w]);
+
+    var y = d3.scale.linear()
+    //    .domain([0, 1.04*d3.max(dataset, function(d) { return d.Tech; })])
+//        .domain([0, 5]) // todo, you know, generalize
+        .domain(ydomain)
+        .range([h - padding_h, 0]);
+
+    // TODO: allow the variable to be selected
+    var line = d3.svg.line()
+        .x(function(d) { return x(d[varx]); })
+        .y(function(d) { return y(d[vary]); });
+
+
+//console.log(d3.max(dataset, function(d) { return d.Tech; }))
+    var xScale = d3.scale.linear()
+      .domain(xdomain)
+      .range([padding_w, w - padding_w]);
+    var yScale = d3.scale.linear()
+      .domain(ydomain)
+      .range([h - padding_h, 0]);
+    if (varx === "Year") {
+        var xAxis = d3.svg.axis()
+                    .scale(xScale)
+                    .orient("bottom")
+                    .tickFormat(d3.format("d"));
+    } else {
+        var xAxis = d3.svg.axis()
+                    .scale(xScale)
+                    .orient("bottom");
+    }
+     if (vary === "Year") {
+        var yAxis = d3.svg.axis()
+                    .scale(yScale)
+                    .orient("left")
+                    .tickFormat(d3.format("d"));
+    } else {
+        var yAxis = d3.svg.axis()
+                    .scale(yScale)
+                    .orient("left");
+    }
+
+    svg.selectAll("g")
+       .remove();
+    svg.append("g")
+       .attr("class", "axis")
+       .attr("transform", "translate(0," + (h - padding_h) + ")")
+       .call(xAxis);
+    svg.append("g")
+       .attr("class", "axis")
+       .attr("transform", "translate(" + padding_w + ",0)")
+       .call(yAxis);
+
+   var vartonames = function(varname) {
+        if (varname === "GDP") {
+            return "GDP per capita (USD)"
+        } else if (varname === "Tech") {
+            return "Carbon Intensity (tonnes carbon / $10,000)"
+        } else if (varname === "Population") {
+            return "Population (1,000s)"
+        } else if (varname === "CO2") {
+            return "Carbon Emissions per capita" // TODO: change!!!
+        } else {
+            return varname
+        }
+   };
+
+// add x-axis label:
+    svg.append("text")
+       .attr("class", "x label")
+       .attr("text-anchor", "end")
+       .attr("x", w/2)
+       .attr("y", h)
+       .text(vartonames(varx));
+// add y-axis label:
+    svg.append("text")
+       .attr("class", "y label")
+       .attr("text-anchor", "end")
+       .attr("y", 5)
+       .attr("x", -h/2 + padding_h)
+       .attr("dy", ".75em")
+       .attr("transform", "rotate(-90)")
+       .text(vartonames(vary));
+
+
+    /*
+    svg.append("path")
+        .datum(dataset)
+        .attr("class", "line")
+        .attr("d", line);
+        */
+    svg.selectAll(".line")
+       .remove();
+    svg.selectAll(".line")
+       .data(dataset)
+       .enter()
+       .append("path")
+       .attr("class", "line")
+       .attr("d", line)
+       // fixing below still
+       .on("mouseover", function(d) {
+           console.log(d3.select(this));
+           console.log(d);
+           // todo: change position of tooltip type thing
+           var xPosition = 50;
+           //var yPosition = d[d.length - 1].Tech; // todo: generalize
+           var yPosition = 50;
+
+           // todo: figure out how to make the line pop to the front.
+
+           d3.select(this)
+             .style("stroke", "orange");
+
+           console.log(d[0].Iso);
+           svg.append("text")
+              .attr("id", "tooltip")
+              .attr("x", xPosition)
+              .attr("y", yPosition)
+              .attr("text-anchor", "middle")
+              .attr("font-family", "sans-serif")
+              .attr("font-size", "11px")
+              .attr("font-weight", "bold")
+              .attr("fill", "black")
+              .text("Country: " + d[0].Iso);
+       })
+       .on("mouseout", function() {
+           d3.select(this)
+             .style("stroke", "steelblue");
+
+           d3.select("#tooltip").remove();
+       });
+
+    console.log("haha")
+};
+
+
+
+
+
+// TODO: stop mutating the [[Prototype]] of an object??
+
+
+var countryData = {
+    //USA: {}
+    USA: []
+};
+
+//var load_data = function(Year) {
+var load_data = function(Isocode) {
+    d3.csv("data_co2.csv", function (error, data) {
+          data
+            .forEach(function(d) {
+                // create data for map
+                fullData[d.Year][d.Isocode] = {
+                  Iso: d.Isocode,
+                 // fillKey: get_fill(+d.Tech),
+                  Year: +d.Year,
+                  Tech: +d.Tech,
+                  GDP: +d.GDP,
+                  Pop: +d.PopTotal
+                };
+
+                if (!(d.Isocode in countryData)) {
+                    //countryData[d.Isocode] = {}
+                    countryData[d.Isocode] = []
+                }
+                //countryData[d.Isocode][d.Year] = {
+                countryData[d.Isocode].push({
+                  Iso: d.Isocode,
+                  Year: +d.Year,
+                  Tech: +d.Tech,
+                  GDP: +d.GDP,
+                  Population: +d.PopTotal,
+                  CO2: +d.CO2
+                });
+              });
+        //make_scatter(fullData[Year]);
+        //make_lines(countryData[Isocode]);
+        countryArray = [];
+        for (iso in countryData) {
+            countryArray.push(countryData[iso]);
+        }
+        make_lines(countryArray, varx, vary)
+        //make_lines(countryArray, "Year", "Tech")
+
+
+    });   
+};
+
+//var varx = "Year"
+var varx = d3.select("#x-variable")
+             .property("value");
+var vary = d3.select("#y-variable")
+             .property("value");
+
+//load_data(1995);
+load_data("USA");
+
+/*
+// For the drop down menu:
+var dropDownX = d3.select("#table_container")
+                 .append("select")
+                 .attr("name", "x-variable");
+                 */
+
+d3.select("#x-variable")
+  .on("change", function() {
+        varx = d3.select(this).property("value");
+        make_lines(countryArray, varx, vary);
+      });
+d3.select("#y-variable")
+  .on("change", function() {
+        vary = d3.select(this).property("value");
+        make_lines(countryArray, varx, vary);
+      });
+
+
+
+var fullData = {
+    1960: {},
+    1961: {},
+    1962: {},
+    1963: {},
+    1964: {},
+    1965: {},
+    1966: {},
+    1967: {},
+    1968: {},
+    1969: {},
+    1970: {},
+    1971: {},
+    1972: {},
+    1973: {},
+    1974: {},
+    1975: {},
+    1976: {},
+    1977: {},
+    1978: {},
+    1979: {},
+    1980: {},
+    1981: {},
+    1982: {},
+    1983: {},
+    1984: {},
+    1985: {},
+    1986: {},
+    1987: {},
+    1988: {},
+    1989: {},
+    1990: {},
+    1991: {},
+    1992: {},
+    1993: {},
+    1994: {},
+    1995: {},
+    1996: {},
+    1997: {},
+    1998: {},
+    1999: {},
+    2000: {},
+    2001: {},
+    2002: {},
+    2003: {},
+    2004: {},
+    2005: {},
+    2006: {},
+    2007: {},
+    2008: {},
+    2009: {},
+    2010: {}
+};
+
+
+
+
+
+</script>
+
+</body>
