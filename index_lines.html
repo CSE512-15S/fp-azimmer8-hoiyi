@@ -60,14 +60,18 @@ Y Variable:
  
 
 <script>    
+
 /*
 TODO: Carbon emissions are by person. Change it!!
-TODO!!
 */
 
 
-/* A lot of code is taken from "Interactive Data Visualization for the Web"
-by Scott Murray */
+/*
+A lot of code is taken from "Interactive Data Visualization for the Web"
+by Scott Murray.
+Also http://bost.ocks.org/mike/nations/ and
+http://bl.ocks.org/mbostock/3883245
+ */
 
 var w = 500;
 var h = 500;
@@ -90,7 +94,6 @@ var make_scatter = function(dataset_object) {
       .range([padding_w, w - padding_w]);
     var yScale = d3.scale.linear()
       .domain([0, 1.04*d3.max(dataset, function(d) { return d.Tech; })])
-      //.range([h - padding_h, padding_h]);
       .range([h - padding_h, 0]);
     var xAxis = d3.svg.axis()
                 .scale(xScale)
@@ -105,11 +108,9 @@ var make_scatter = function(dataset_object) {
        .append("circle")
        .attr({
            cx: function(d) {
-               //return d[0];
                return xScale(d.GDP);
            },
            cy: function(d) {
-               //return d[1];
                return yScale(d.Tech);
            },
            r: 4,
@@ -133,9 +134,6 @@ var make_scatter = function(dataset_object) {
               .attr("fill", "black")
               .text("Country: " + d.Iso + 
                     ", Year: " + d.Year);
-              /*.text(function(d) {
-                  return "Country: " + d.Iso;
-              });*/
        })
        .on("mouseout", function() {
            d3.select(this)
@@ -169,7 +167,6 @@ var make_lines = function(dataset, varx, vary) {
                            max_tmp = d3.max([max_tmp, d[i][varx]]);
                        }
                        return max_tmp;
-                       // return d[varx];
                    })];
     }
     if (vary === "Year") {
@@ -185,15 +182,12 @@ var make_lines = function(dataset, varx, vary) {
     }
  
 
-    // todo: generalize
+    // todo: allow for log scale
     var x = d3.scale.linear()
-//        .domain([1960, 2010])
         .domain(xdomain)
         .range([padding_w, w - padding_w]);
 
     var y = d3.scale.linear()
-    //    .domain([0, 1.04*d3.max(dataset, function(d) { return d.Tech; })])
-//        .domain([0, 5]) // todo, you know, generalize
         .domain(ydomain)
         .range([h - padding_h, 0]);
 
@@ -203,7 +197,6 @@ var make_lines = function(dataset, varx, vary) {
         .y(function(d) { return y(d[vary]); });
 
 
-//console.log(d3.max(dataset, function(d) { return d.Tech; }))
     var xScale = d3.scale.linear()
       .domain(xdomain)
       .range([padding_w, w - padding_w]);
@@ -259,27 +252,20 @@ var make_lines = function(dataset, varx, vary) {
 // add x-axis label:
     svg.append("text")
        .attr("class", "x label")
-       .attr("text-anchor", "end")
+       .attr("text-anchor", "middle")
        .attr("x", w/2)
        .attr("y", h)
        .text(vartonames(varx));
 // add y-axis label:
     svg.append("text")
        .attr("class", "y label")
-       .attr("text-anchor", "end")
+       .attr("text-anchor", "middle")
        .attr("y", 5)
        .attr("x", -h/2 + padding_h)
-       .attr("dy", ".75em")
+       .attr("dy", ".5em")
        .attr("transform", "rotate(-90)")
        .text(vartonames(vary));
 
-
-    /*
-    svg.append("path")
-        .datum(dataset)
-        .attr("class", "line")
-        .attr("d", line);
-        */
     svg.selectAll(".line")
        .remove();
     svg.selectAll(".line")
@@ -294,7 +280,6 @@ var make_lines = function(dataset, varx, vary) {
            console.log(d);
            // todo: change position of tooltip type thing
            var xPosition = 50;
-           //var yPosition = d[d.length - 1].Tech; // todo: generalize
            var yPosition = 50;
 
            // todo: figure out how to make the line pop to the front.
@@ -332,11 +317,9 @@ var make_lines = function(dataset, varx, vary) {
 
 
 var countryData = {
-    //USA: {}
     USA: []
 };
 
-//var load_data = function(Year) {
 var load_data = function(Isocode) {
     d3.csv("data_co2.csv", function (error, data) {
           data
@@ -352,10 +335,8 @@ var load_data = function(Isocode) {
                 };
 
                 if (!(d.Isocode in countryData)) {
-                    //countryData[d.Isocode] = {}
                     countryData[d.Isocode] = []
                 }
-                //countryData[d.Isocode][d.Year] = {
                 countryData[d.Isocode].push({
                   Iso: d.Isocode,
                   Year: +d.Year,
@@ -366,19 +347,16 @@ var load_data = function(Isocode) {
                 });
               });
         //make_scatter(fullData[Year]);
-        //make_lines(countryData[Isocode]);
         countryArray = [];
         for (iso in countryData) {
             countryArray.push(countryData[iso]);
         }
         make_lines(countryArray, varx, vary)
-        //make_lines(countryArray, "Year", "Tech")
 
 
     });   
 };
 
-//var varx = "Year"
 var varx = d3.select("#x-variable")
              .property("value");
 var vary = d3.select("#y-variable")
@@ -386,13 +364,6 @@ var vary = d3.select("#y-variable")
 
 //load_data(1995);
 load_data("USA");
-
-/*
-// For the drop down menu:
-var dropDownX = d3.select("#table_container")
-                 .append("select")
-                 .attr("name", "x-variable");
-                 */
 
 d3.select("#x-variable")
   .on("change", function() {
