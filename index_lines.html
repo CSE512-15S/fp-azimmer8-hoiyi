@@ -38,7 +38,6 @@ X Variable:
 </select>
 X on log scale? <input id="x-log-scale" type="checkbox" value="log-scale">
 
-
 <br/>
 
 Y Variable:
@@ -56,6 +55,27 @@ Y on log scale? <input id="y-log-scale" type="checkbox" value="log-scale">
 <button type="button" id="swap-axes">Swap axes</button>
 
  <br/>
+
+Region:
+<select id="region">
+  <option value="All">Entire World</option>
+  <option value=" Southeast Asia">Southeast Asia</option>
+  <option value=" Eastern Europe">Eastern Europe</option>
+  <option value=" Africa">Africa</option>
+  <option value=" Western Europe">Western Europe</option>
+  <option value=" Latin America">Latin America</option>
+  <option value=" Former Soviet Union">Former Soviet Union</option>
+  <option value=" Australia_NZ">Australia and NZ</option>
+  <option value=" Middle East">Middle East</option>
+  <option value=" China">China</option>
+  <option value=" Canada">Canada</option>
+  <option value=" India">India</option>
+  <option value=" Japan">Japan</option>
+  <option value=" USA">USA</option>
+  <option value=" Korea">Korea</option>
+</select>
+
+
  <br/>
  <br/>
  <div id="container1" style="position: relative; width: 80%; max-height: 450px;"></div>
@@ -90,6 +110,8 @@ var svg = d3.select("body")
             .attr("height", h);
 
 // todo: when initially plotting, get the selections from the drop-down. or force the drop-down to agree.
+
+// TODO: if any missing observations, then nothing will show up. (see former ussr gdp and intensity data)
 
 var make_scatter = function(dataset_object) {
     var dataset = Object.keys(dataset_object).map(function (key) {
@@ -161,7 +183,13 @@ var make_scatter = function(dataset_object) {
 };
 
 
-var make_lines = function(dataset, varx, vary) {
+//var make_lines = function(dataset, varx, vary) {
+var make_lines = function(varx, vary) {
+    if (region_selected === "All") {
+        dataset = countryArray;
+    } else {
+        dataset = regionArray[region_selected];
+    }
 
     var year_format = d3.format("d");
     var xdomain = [];
@@ -249,6 +277,7 @@ var make_lines = function(dataset, varx, vary) {
 
     // TODO: allow the variable to be selected
     var line = d3.svg.line()
+        .defined(function(d) { return (!isNaN(d[vary])) && (!isNaN(d[varx])); })
         .x(function(d) { return x(d[varx]); })
         .y(function(d) { return y(d[vary]); });
 
@@ -390,9 +419,23 @@ var make_lines = function(dataset, varx, vary) {
 var countryData = {
     USA: []
 };
+var regionsMap = {
+};
+var regionArray = {
+};
 
 var load_data = function(Isocode) {
-    d3.csv("data_co2.csv", function (error, data) {
+    d3.csv("gcam_region_mapping.csv", function(error, data) {
+        data.forEach(function(d) {
+            if (!(d.Region in regionsMap)) {
+                regionsMap[d.Region] = [d.Isocode];
+            } else {
+                regionsMap[d.Region].push(d.Isocode);
+            }
+        });
+    });
+    console.log(regionsMap)
+    d3.csv("data_co2.csv", function(error, data) {
           data
             .forEach(function(d) {
                 // create data for map
@@ -418,13 +461,25 @@ var load_data = function(Isocode) {
                 });
               });
         //make_scatter(fullData[Year]);
+        for (var region in regionsMap) {
+            regionArray[region] = [];
+        }
+        function include(arr,obj) {
+            return (arr.indexOf(obj) != -1);
+        }
         countryArray = [];
         for (iso in countryData) {
+            for (var region in regionsMap) {
+// Inefficient way of making this object right now
+                if (include(regionsMap[region], iso)) {
+                    regionArray[region].push(countryData[iso]);
+                }
+            }
+
             countryArray.push(countryData[iso]);
         }
-        make_lines(countryArray, varx, vary)
-
-
+        //make_lines(countryArray, varx, vary)
+        make_lines(varx, vary)
     });   
 };
 
@@ -436,19 +491,23 @@ var logx = d3.select("#x-log-scale")
              .property("checked");
 var logy = d3.select("#y-log-scale")
              .property("checked");
-
+var region_selected = d3.select("#region")
+                        .property("value"); 
+ 
 //load_data(1995);
 load_data("USA");
 
 d3.select("#x-variable")
   .on("change", function() {
         varx = d3.select(this).property("value");
-        make_lines(countryArray, varx, vary);
+        //make_lines(countryArray, varx, vary);
+        make_lines(varx, vary);
       });
 d3.select("#y-variable")
   .on("change", function() {
         vary = d3.select(this).property("value");
-        make_lines(countryArray, varx, vary);
+        //make_lines(countryArray, varx, vary);
+        make_lines(varx, vary);
       });
 
 // TODO: create multiple buttons for log scale which are mutually exclusive, or something
@@ -456,14 +515,23 @@ d3.select("#x-log-scale")
   .on("change", function() {
         console.log("logx change detected");
         logx = d3.select(this).property("checked");
-        make_lines(countryArray, varx, vary);
+        //make_lines(countryArray, varx, vary);
+        make_lines(varx, vary);
       });
 d3.select("#y-log-scale")
   .on("change", function() {
         console.log("logy change detected");
         logy = d3.select(this).property("checked");
-        make_lines(countryArray, varx, vary);
+        //make_lines(countryArray, varx, vary);
+        make_lines(varx, vary);
       });
+d3.select("#region")
+  .on("change", function() {
+        console.log("region change detected");
+        region_selected = d3.select(this).property("value");
+        make_lines(varx, vary);
+      });
+
 
 //<button type="button" id="swap-axes">Swap axes</button>
 d3.select("#swap-axes")
@@ -485,8 +553,10 @@ d3.select("#swap-axes")
           document.getElementById("x-log-scale").checked =
               document.getElementById("y-log-scale").checked;
           document.getElementById("y-log-scale").checked = xlogscale_tmp;
-          make_lines(countryArray, varx, vary);
+          //make_lines(countryArray, varx, vary);
+          make_lines(varx, vary);
       });
+
 
 
 var fullData = {
