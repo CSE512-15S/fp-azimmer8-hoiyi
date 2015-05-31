@@ -2,22 +2,38 @@
 <meta charset="utf-8">
 <title> Global Warming Data </title>
  
-<h2> CO2 Emission across Countries from 1960 to 2008  </h2>
 
 <head>
+
+<!-- Bootstrap theme stuff -->
+<!-- Latest compiled and minified CSS -->
+<!--link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"-->
+<!-- Optional theme -->
+<!--link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css"-->
+
 <style type="text/css">
 
 .axis path,
 .axis line {
     fill: none;
-    stroke: black;
+    stroke: grey;
     shape-rendering: crispEdges;
 }
 
 .line {
     fill: none;
     stroke: steelblue;
-    stroke-width: 1.5px;
+    opacity: 0.7;
+    stroke-width: 2.5px;
+}
+
+body {
+    margin-left: 35px;
+}
+
+.btn {
+    width:80px;
+    height:25px;
 }
 
 .axis text {
@@ -28,17 +44,7 @@
 </head>
 <body>
 
-X Variable:
-<select id="x-variable">
-  <option value="Year">Year</option>
-  <option value="Population">Population</option>
-  <option value="GDP">GDP per capita</option>
-  <option value="CO2">Carbon emissions</option>
-  <option value="Tech">Intensity (Carbon / GDP)</option>
-</select>
-X on log scale? <input id="x-log-scale" type="checkbox" value="log-scale">
-
-<br/>
+<h2> CO2 Emission across Countries from 1960 to 2008  </h2>
 
 Y Variable:
 <select id="y-variable">
@@ -52,7 +58,21 @@ Y on log scale? <input id="y-log-scale" type="checkbox" value="log-scale">
 
  <br/>
 
-<button type="button" id="swap-axes">Swap axes</button>
+X Variable:
+<select id="x-variable">
+  <option value="Year">Year</option>
+  <option value="Population">Population</option>
+  <option value="GDP">GDP per capita</option>
+  <option value="CO2">Carbon emissions</option>
+  <option value="Tech">Intensity (Carbon / GDP)</option>
+</select>
+X on log scale? <input id="x-log-scale" type="checkbox" value="log-scale">
+
+<br/>
+
+
+<button class="btn btn-default" type="button" id="swap-axes">Swap axes</button>
+<button class="btn btn-default" type="button" id="reset">Reset</button>
 
  <br/>
 
@@ -100,14 +120,22 @@ Also http://bost.ocks.org/mike/nations/ and
 http://bl.ocks.org/mbostock/3883245
  */
 
-var w = 500;
+var w = 700;
 var h = 500;
 var padding_h = 40;
-var padding_w = 60;
+var padding_left = 70;
+var padding_right = 150;
 var svg = d3.select("body")
             .append("svg")
             .attr("width", w)
             .attr("height", h);
+
+// From https://stackoverflow.com/questions/14167863/how-can-i-bring-a-circle-to-the-front-with-d3
+d3.selection.prototype.moveToFront = function() {
+  return this.each(function(){
+    this.parentNode.appendChild(this);
+  });
+};
 
 // todo: when initially plotting, get the selections from the drop-down. or force the drop-down to agree.
 
@@ -120,16 +148,17 @@ var make_scatter = function(dataset_object) {
 
     var xScale = d3.scale.linear()
       .domain([0, 1.04*d3.max(dataset, function(d) { return d.GDP; })])
-      .range([padding_w, w - padding_w]);
+      .range([padding_left, w - padding_right]);
     var yScale = d3.scale.linear()
       .domain([0, 1.04*d3.max(dataset, function(d) { return d.Tech; })])
-      .range([h - padding_h, 0]);
+      .range([h - padding_h, padding_h/2]);
     var xAxis = d3.svg.axis()
                 .scale(xScale)
                 .orient("bottom");
     var yAxis = d3.svg.axis()
                 .scale(yScale)
                 .orient("left");
+
 
     svg.selectAll("circle")
        .data(dataset)
@@ -177,7 +206,7 @@ var make_scatter = function(dataset_object) {
        .call(xAxis);
     svg.append("g")
        .attr("class", "axis")
-       .attr("transform", "translate(" + padding_w + ",0)")
+       .attr("transform", "translate(" + padding_left + ",0)")
        .call(yAxis);
 
 };
@@ -257,22 +286,22 @@ var make_lines = function(varx, vary) {
     if (logx) {
         var x = d3.scale.log()
                   .domain(xdomain)
-                  .range([padding_w, w - padding_w]);
+                  .range([padding_left, w - padding_right]);
     } else {
         var x = d3.scale.linear()
                   .domain(xdomain)
-                  .range([padding_w, w - padding_w]);
+                  .range([padding_left, w - padding_right]);
     }
 
 // TODO: fix up log scale. make optional, make the range based on the data, put in axis labels
     if (logy) {
         var y = d3.scale.log()
                   .domain(ydomain)
-                  .range([h - padding_h, 0]);
+                  .range([h - padding_h, padding_h/2]);
     } else {
         var y = d3.scale.linear()
                   .domain(ydomain)
-                  .range([h - padding_h, 0]);
+                  .range([h - padding_h, padding_h/2]);
     }
 
     // TODO: allow the variable to be selected
@@ -285,20 +314,20 @@ var make_lines = function(varx, vary) {
     if (logx) {
         var xScale = d3.scale.log()
           .domain(xdomain)
-          .range([padding_w, w - padding_w]);
+          .range([padding_left, w - padding_right]);
     } else {
         var xScale = d3.scale.linear()
           .domain(xdomain)
-          .range([padding_w, w - padding_w]);
+          .range([padding_left, w - padding_right]);
     }
     if (logy) {
         var yScale = d3.scale.log()
           .domain(ydomain)
-          .range([h - padding_h, 0]);
+          .range([h - padding_h, padding_h/2]);
     } else {
         var yScale = d3.scale.linear()
           .domain(ydomain)
-          .range([h - padding_h, 0]);
+          .range([h - padding_h, padding_h/2]);
     }
 
     if (varx === "Year") {
@@ -333,7 +362,7 @@ var make_lines = function(varx, vary) {
        .call(xAxis);
     svg.append("g")
        .attr("class", "axis")
-       .attr("transform", "translate(" + padding_w + ",0)")
+       .attr("transform", "translate(" + padding_left + ",0)")
        .call(yAxis);
 
    var vartonames = function(varname) {
@@ -349,6 +378,29 @@ var make_lines = function(varx, vary) {
             return varname
         }
    };
+
+//TODO: fix the removal
+    if (varx === "Year") {
+        for (var i = 0; i < dataset.length; i++) {
+            var xPosition = x(2010.5);
+            var yPosition = y(dataset[i][dataset[i].length-1][vary]) + 3;
+            if (isNaN(yPosition)) {
+                // Use 2008 data
+                yPosition = y(dataset[i][dataset[i].length-3][vary]) + 3;
+            }
+            svg.append("text")
+               .attr("id", "tooltip")
+               .attr("x", xPosition)
+               .attr("y", yPosition)
+               .attr("text-anchor", "start")
+               .attr("opacity", 0.55)
+               .attr("font-family", "sans-serif")
+               .attr("font-size", "11px")
+               .attr("font-weight", "bold")
+               .attr("fill", "black")
+               .text(dataset[i][0].Country);
+        }
+    }
 
 // add x-axis label:
     svg.append("text")
@@ -375,37 +427,48 @@ var make_lines = function(varx, vary) {
        .append("path")
        .attr("class", "line")
        .attr("d", line)
-       // fixing below still
+      // fixing below still
        .on("mouseover", function(d) {
-           console.log(d3.select(this));
-           console.log(d);
+           console.log("moused over");
            // todo: change position of tooltip type thing
-           var xPosition = 50;
-           var yPosition = 50;
-
-           // todo: figure out how to make the line pop to the front.
+           var xPosition = w/2;
+           var yPosition = 20;
 
            d3.select(this)
+             .moveToFront()
+             .style("opacity", "1")
              .style("stroke", "orange");
 
-           console.log(d[0].Iso);
            svg.append("text")
-              .attr("id", "tooltip")
+              .attr("id", "tooltip-hover")
               .attr("x", xPosition)
               .attr("y", yPosition)
               .attr("text-anchor", "middle")
               .attr("font-family", "sans-serif")
-              .attr("font-size", "11px")
+              .attr("font-size", "12px")
               .attr("font-weight", "bold")
-              .attr("fill", "black")
-              .text("Country: " + d[0].Iso);
+              .attr("fill", "orange")
+              .text("Country: " + d[0].Country);
        })
        .on("mouseout", function() {
+           console.log("mouseout detected");
            d3.select(this)
+             .style("opacity", "0.7")
              .style("stroke", "steelblue");
 
-           d3.select("#tooltip").remove();
+           d3.select("#tooltip-hover").remove();
        });
+       // TODO: implement clicking behavior
+       /*
+       .on("click", function(d) {
+           
+           console.log("clicked");
+           console.log(d3.select(this));
+           d3.select(this)
+             .moveToFront()
+             .style("stroke", "black");
+       });
+       */
 
 };
 
@@ -453,6 +516,7 @@ var load_data = function(Isocode) {
                 }
                 countryData[d.Isocode].push({
                   Iso: d.Isocode,
+                  Country: d.Country,
                   Year: +d.Year,
                   Tech: +d.Tech,
                   GDP: +d.GDP,
@@ -554,6 +618,23 @@ d3.select("#swap-axes")
               document.getElementById("y-log-scale").checked;
           document.getElementById("y-log-scale").checked = xlogscale_tmp;
           //make_lines(countryArray, varx, vary);
+          make_lines(varx, vary);
+      });
+
+//<button class="btn btn-default" type="button" id="reset">Reset</button>
+d3.select("#reset")
+  .on("click", function() {
+          console.log("Reset button clicked");
+          varx = "Year";
+          vary = "Tech";
+          logx = false;
+          logy = false;
+          region_selected = "All";
+          document.getElementById("x-variable").value = "Year";
+          document.getElementById("region").value = "All";
+          document.getElementById("y-variable").value = "Tech";
+          document.getElementById("x-log-scale").checked = false;
+          document.getElementById("y-log-scale").checked = false;
           make_lines(varx, vary);
       });
 
