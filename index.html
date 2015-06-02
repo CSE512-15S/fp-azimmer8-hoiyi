@@ -1,7 +1,11 @@
 <!DOCTYPE html>
+<head>
 <meta charset="utf-8">
 <link rel="stylesheet" href="main.css"/>
-<link rel="stylesheet" href="slider.css" />
+<link rel="stylesheet" type="text/css" href="menu.css"/>
+<link rel="stylesheet" href="slider.css"/>
+</head>
+
 <title> Global Warming Data </title>
 <style>
     #clock {
@@ -32,6 +36,15 @@
 	
   </style>
 <body>
+<div id="menu">
+        <ul>
+            <li><a href="#">Selece Chart</a>
+	<ul>
+        <li><a href="co2emission.html">CO2 Emission</a></li>
+        </ul></li>
+        </ul>
+</div>
+
 <div id="container">
 <h1> CO2 Emission</h1>  
 <h2> CO2 Emission across Countries from 1960 to 2008  </h2>
@@ -56,8 +69,12 @@
  <button id = "play" > play </button>
  <div id = "slider-container">
      <div id = "slider-div"></div>
-     <!--<div id="slider-probe">-->
- <!-- <span id = "clock">year</span> --!>
+
+     <div id="slider-probe">
+        <p></p>
+        <div></div>
+     </div>
+<!-- <span id = "clock">year</span> --!>
  <!--<input id="slider",class="slider" type="range" min="1960" max="2008" value="1960" step="1" herf="slider.css" />-->
 </div>
  <!--<div id="slider-div"></div>-->
@@ -91,23 +108,11 @@ var width = 960,
 
 var format = d3.format(",");
 
-function numberWithCommas(x) {
-    // Taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
-    if (x) {
-        return x.toString().repilace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    } else {
-        return x;
-    }
-}
-
-
 //animateMap();
 
 var currentYear = 1960, playing = false;
 
 var
-//color_qmissing = 'rgb(216,149,149)',
-//color_qmissing = 'rgb(246,200,200)',
 color_qmissing = '#ede4e4'
 color_q0 = 'rgb(198,219,239)',
 color_q1 = 'rgb(158,202,225)',
@@ -133,9 +138,7 @@ var map = new Datamap({
   element: document.getElementById('container1'),
   projection: 'mercator',
   fills: {
-    defaultFill: color_qmissing, //'rgb(222,235,247)',
-//    defaultFill: 'rgb(216,149,149)', //'rgb(222,235,247)',
-    // define colors for quantized scale
+    defaultFill: color_qmissing,
     qmissing: color_qmissing,
     q0: color_q0,
     q1: color_q1,
@@ -329,7 +332,7 @@ function createSlider(){
     })
     .on("slideend",function(){
       if ( isPlaying ) animateMap();
-      d3.select("#slider-div").on("mousemove",update_data(period[currentYear]))
+      d3.select("#slider-div").on("mousemove",sliderProbe)
     })
     .on("slidestart",function(){
       d3.select("#slider-div").on("mousemove",null)
@@ -342,7 +345,12 @@ function createSlider(){
     .append("div")
     .attr("id","slider-div")
     .style("width",500 + "px")
-    .on("mousemove", update_data(period[currentYear]))
+    .on("mousemove", sliderProbe)
+    /*.on("change", function change() {
+    var Year = this.value;
+    update_data(Year);
+    d3.select('#clock').html(Year);  // update the clock
+})*/
     .on("mouseout",function(){
       d3.select("#slider-probe").style("display","none");
     })
@@ -354,14 +362,14 @@ function createSlider(){
 }
   
 
-d3.selectAll("input").on("change", function change() {
+/*d3.selectAll("input").on("change", function change() {
     var Year = this.value;
     update_data(Year);
     d3.select('#clock').html(Year);  // update the clock
-});
+});*/
 
 
-d3.selectAll("#slider-div").on("change", function change(){
+d3.selectAll("#slider-div .d3-slider-handle").on("change", function change(){
 	var Year = this.value;
         update_data(Year);
 	d3.select('#clock').html(Year);
@@ -370,11 +378,17 @@ d3.selectAll("#slider-div").on("change", function change(){
 
 function sliderProbe(){
   //var d = dateScale.invert( ( d3.mouse(this)[0] ) );
-  d3.select("#slider-probe")
+  var Year = this.value;
+  /*d3.select("#slider-probe").on("change", function change(){
+	var Year = this.value;
+        update_data(Year);
+	d3.select('#clock').html(Year);
+	})*/
+    d3.select("#slider-probe")
     .style( "left", d3.mouse(this) + sliderMargin + "px" )
     .style("display","block")
     .select("p")
-    //.html( months[d.getMonth()] + " " + d.getFullYear() )
+    .html( Year )
 }
 
 createSlider();
@@ -432,11 +446,11 @@ d3.select('svg')
 var
   legendBarWidth = 30,
   legendBarHeight = 10,
-  legendOffsetX = 30,
-  legendOffsetY = 400;
-var date = ["2.99" + "-" + "17.14", "1.91" + "-" + "2.99",
-   "1.33" + "-" + "1.91", "0.97" + "-" + "1.33", "0.68" + "-" + "0.97",
-    "0.38" + "-" + "0.68", "0" + "-" + "0.38" ];
+  legendOffsetX = 50,
+  legendOffsetY = 500;
+var date = ["2.99" + " - " + "17.14", "1.91" + " - " + "2.99",
+   "1.33" + " - " + "1.91", "0.97" + " - " + "1.33", "0.68" + " - " + "0.97",
+    "0.38" + " - " + "0.68", "0" + " - " + "0.38" ];
 // draw the legend
 d3.select('.legend').selectAll('.legend')
 .data(colorScale)
