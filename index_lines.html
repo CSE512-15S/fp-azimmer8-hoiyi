@@ -13,6 +13,7 @@
 
 <style type="text/css">
 
+
 .axis path,
 .axis line {
     fill: none;
@@ -27,18 +28,39 @@
     stroke-width: 2.5px;
 }
 
+.line.hidden {
+    stroke: grey;
+    opacity: 0.4;
+}
+
+.extent {
+    fill: #000;
+    fill-opacity: .125;
+    stroke: #fff;
+}
+
 body {
-    margin-left: 35px;
+    margin: 40px auto;
+    max-width: 750px;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #444;
+    padding: 0 10px;
+}
+
+h1,h2,h3 {
+    line-height: 1.2;
 }
 
 .btn {
     width:80px;
-    height:25px;
+    height:35px;
 }
 
 .axis text {
     font-family: sans-serif;
     font-size: 11px;
+    color: red;
 }
 </style>
 </head>
@@ -73,6 +95,7 @@ X on log scale? <input id="x-log-scale" type="checkbox" value="log-scale">
 
 <button class="btn btn-default" type="button" id="swap-axes">Swap axes</button>
 <button class="btn btn-default" type="button" id="reset">Reset</button>
+<button class="btn btn-default" type="button" id="subset-countries" disabled style="width: 180px">Subset to selected countries</button>
 
  <br/>
 
@@ -112,6 +135,7 @@ Region:
 TODO: Carbon emissions are by person. Change it!!
 */
 
+// TODO: Allow selection of region when subsetted countries.
 
 /*
 A lot of code is taken from "Interactive Data Visualization for the Web"
@@ -122,7 +146,7 @@ http://bl.ocks.org/mbostock/3883245
 
 var w = 700;
 var h = 500;
-var padding_h = 40;
+var padding_h = 50;
 var padding_left = 70;
 var padding_right = 150;
 var svg = d3.select("body")
@@ -130,12 +154,21 @@ var svg = d3.select("body")
             .attr("width", w)
             .attr("height", h);
 
+// TODO: fix these numbers
+var margin2 = {top: 40, right: 10, bottom: 20, left: 40};
+var context = svg.append("g")
+    .attr("class", "context")
+    .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
+
+
 // From https://stackoverflow.com/questions/14167863/how-can-i-bring-a-circle-to-the-front-with-d3
 d3.selection.prototype.moveToFront = function() {
   return this.each(function(){
     this.parentNode.appendChild(this);
   });
 };
+
+
 
 // todo: when initially plotting, get the selections from the drop-down. or force the drop-down to agree.
 
@@ -212,12 +245,22 @@ var make_scatter = function(dataset_object) {
 };
 
 
-//var make_lines = function(dataset, varx, vary) {
+
+
 var make_lines = function(varx, vary) {
-    if (region_selected === "All") {
+    d3.select("#subset-countries")[0][0].disabled = true;
+    if (region_selected === "Subset-countries") {
+        // TODO
+        dataset = []
+        for (var i = 0; i < selectedCountries.length; i++) {
+            dataset.push(countryData[selectedCountries[i]]);
+        }
+    } else if (region_selected === "All") {
         dataset = countryArray;
+        selectedCountries = [];
     } else {
         dataset = regionArray[region_selected];
+        selectedCountries = [];
     }
 
     var year_format = d3.format("d");
@@ -354,8 +397,8 @@ var make_lines = function(varx, vary) {
     // Clean up before adding new axes:
     svg.selectAll("g")
        .remove();
-    svg.selectAll("text").attr("class", "x label").remove();
-    svg.selectAll("text").attr("class", "y label").remove();
+    svg.selectAll("text").attr("class", "x-label").remove();
+    svg.selectAll("text").attr("class", "y-label").remove();
     svg.append("g")
        .attr("class", "axis")
        .attr("transform", "translate(0," + (h - padding_h) + ")")
@@ -393,25 +436,25 @@ var make_lines = function(varx, vary) {
                .attr("x", xPosition)
                .attr("y", yPosition)
                .attr("text-anchor", "start")
-               .attr("opacity", 0.55)
+               .attr("opacity", 0.8)
                .attr("font-family", "sans-serif")
                .attr("font-size", "11px")
                .attr("font-weight", "bold")
-               .attr("fill", "black")
+               .attr("fill", "#444")
                .text(dataset[i][0].Country);
         }
     }
 
 // add x-axis label:
     svg.append("text")
-       .attr("class", "x title")
+       .attr("class", "x-label")
        .attr("text-anchor", "middle")
        .attr("x", w/2)
-       .attr("y", h)
+       .attr("y", h - padding_h/4)
        .text(vartonames(varx));
 // add y-axis label:
     svg.append("text")
-       .attr("class", "y label")
+       .attr("class", "y-label")
        .attr("text-anchor", "middle")
        .attr("y", 5)
        .attr("x", -h/2 + padding_h)
@@ -470,15 +513,71 @@ var make_lines = function(varx, vary) {
        });
        */
 
-};
+// TODO: remove conflict between brush and mouseover!!!
+// TODO: save clicked countries.
 
+// todo: include a line if part of a segment falls in the brush box.
+// Brush taken from http://bl.ocks.org/mbostock/4063663
+  var brush = d3.svg.brush()
+      .x(xScale)
+      .y(yScale)
+      .on("brushstart", brushstart)
+      .on("brush", brushmove)
+      .on("brushend", brushend);
+
+    svg.call(brush);
+
+  // Clear the previously-active brush, if any.
+  function brushstart() {
+    console.log("brush starting!")
+    brush.clear()
+  }
+
+  // Highlight the selected lines
+  function brushmove(p) {
+    var e = brush.extent();
+    svg.selectAll("path").classed("hidden", function(d) {
+// If any point of the line d falls in the box, classify it!!
+        for (var i = 0, linelen = d.length; i < linelen; i++) {
+            if (e[0][0] < d[i][varx] && d[i][varx] < e[1][0]
+             && e[0][1] < d[i][vary] && d[i][vary] < e[1][1]) {
+                return false;
+            }
+        }
+        return true;
+    });
+  }
+
+  // If the brush is empty, as in it takes no volume, select all lines
+  function brushend() {
+      var selectedLines = svg.selectAll("path:not(.hidden)").data();
+      selectedCountries = [];
+      for (var i = 0; i < selectedLines.length; i++) {
+          selectedCountries.push(selectedLines[i][0]["Iso"]);
+      }
+      if (selectedCountries.length > 0) {
+          d3.select("#subset-countries")[0][0].disabled = false;
+      } else {
+          d3.select("#subset-countries")[0][0].disabled = true;
+      }
+    if (brush.empty()) svg.selectAll(".hidden").classed("hidden", false);
+  }
+  context.append("g")
+      .attr("class", "x brush")
+      .call(brush)
+    .selectAll("rect")
+      .attr("y", -6)
+      .attr("height", h+ 7);
+
+};
 
 
 
 
 // TODO: stop mutating the [[Prototype]] of an object??
 
-
+// initialize in case the page is reloaded when it's enabled
+d3.select("#subset-countries")[0][0].disabled = true;
 var countryData = {
     USA: []
 };
@@ -630,6 +729,8 @@ d3.select("#reset")
           logx = false;
           logy = false;
           region_selected = "All";
+          selectedCountries = [];
+          d3.select("#subset-countries")[0][0].disabled = true;
           document.getElementById("x-variable").value = "Year";
           document.getElementById("region").value = "All";
           document.getElementById("y-variable").value = "Tech";
@@ -637,6 +738,20 @@ d3.select("#reset")
           document.getElementById("y-log-scale").checked = false;
           make_lines(varx, vary);
       });
+
+// TODO: an undo selection button?
+var selectedCountries = [];
+d3.select("#subset-countries")
+  .on("click", function() {
+          console.log("Subset countries button pressed!");
+          if (selectedCountries.length > 0) {
+              region_selected = "Subset-countries";
+              make_lines(varx, vary);
+          } else {
+              console.log("Not subsetting because no countries selected");
+          }
+      });
+
 
 
 
