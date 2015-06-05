@@ -326,9 +326,9 @@ function createSlider(){
   slider = d3.slider()
     .scale( sliderScale )
     .on("slide", function(event, value){
-      /*if (isPlaying){
+      if (isPlaying){
 	clearInterval(interval);
-      }*/
+      }
 	update_data(period[value]);
         d3.select('#clock').html(period[value]);})
     .on("slideend",function(){
@@ -399,6 +399,9 @@ var currentYear = 0;
     isPlaying = false;
 
 function animateMap(){
+
+  var currentYear = slider ? slider.value() : 0;
+
   interval = setInterval( function(){
     currentYear++;
 
