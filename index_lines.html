@@ -35,7 +35,7 @@
 
 .extent {
     fill: #000;
-    fill-opacity: .125;
+    fill-opacity: .05;
     stroke: #fff;
 }
 
@@ -54,7 +54,7 @@ h1,h2,h3 {
 
 .btn {
     width:80px;
-    height:35px;
+    height:30px;
 }
 
 .axis text {
@@ -133,6 +133,8 @@ Region:
 
 /*
 TODO: Carbon emissions are by person. Change it!!
+TODO: add in other variables
+TODO: add colors by region, If subsetted to only a few countries, display lines by color (fewer than 10??)
 */
 
 // TODO: Allow selection of region when subsetted countries.
@@ -470,12 +472,17 @@ var make_lines = function(varx, vary) {
        .append("path")
        .attr("class", "line")
        .attr("d", line)
+       .attr("id", function(d) {
+                console.log(d[0]["Iso"]);
+                return d[0]["Iso"]
+             })
       // fixing below still
        .on("mouseover", function(d) {
            console.log("moused over");
            // todo: change position of tooltip type thing
            var xPosition = w/2;
            var yPosition = 20;
+           console.log(d3.select(this));
 
            d3.select(this)
              .moveToFront()
@@ -501,21 +508,11 @@ var make_lines = function(varx, vary) {
 
            d3.select("#tooltip-hover").remove();
        });
-       // TODO: implement clicking behavior
-       /*
-       .on("click", function(d) {
-           
-           console.log("clicked");
-           console.log(d3.select(this));
-           d3.select(this)
-             .moveToFront()
-             .style("stroke", "black");
-       });
-       */
 
 // TODO: remove conflict between brush and mouseover!!!
 // TODO: save clicked countries.
 
+/*
 // todo: include a line if part of a segment falls in the brush box.
 // Brush taken from http://bl.ocks.org/mbostock/4063663
   var brush = d3.svg.brush()
@@ -568,7 +565,7 @@ var make_lines = function(varx, vary) {
     .selectAll("rect")
       .attr("y", -6)
       .attr("height", h+ 7);
-
+*/
 };
 
 
