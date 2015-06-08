@@ -112,6 +112,7 @@ X on log scale? <input id="x-log-scale" type="checkbox" value="log-scale">
 
 Region:
 <select id="region">
+  <option value="Summarize-region">Region summaries</option>
   <option value="All">Entire World</option>
   <option value=" Southeast Asia">Southeast Asia</option>
   <option value=" Eastern Europe">Eastern Europe</option>
@@ -193,6 +194,9 @@ var make_lines = function(varx, vary) {
         }
     } else if (region_selected === "All") {
         dataset = countryArray;
+        selectedCountries = [];
+    } else if (region_selected === "Summarize-region") {
+        dataset = regionSummaryArray;
         selectedCountries = [];
     } else {
         dataset = regionArray[region_selected];
@@ -407,7 +411,7 @@ var make_lines = function(varx, vary) {
        .attr("class", "line")
        .attr("d", line)
        .attr("id", function(d) {
-                console.log(d[0]["Iso"]);
+                //console.log(d[0]["Iso"]);
                 return d[0]["Iso"]
              })
       // fixing below still
@@ -416,7 +420,6 @@ var make_lines = function(varx, vary) {
            // todo: change position of tooltip type thing
            var xPosition = w/2;
            var yPosition = 20;
-           console.log(d3.select(this));
 
            d3.select(this)
              .moveToFront()
@@ -512,6 +515,11 @@ d3.select("#subset-countries")[0][0].disabled = true;
 var countryData = {
     USA: []
 };
+// regionSummaryData and regionSummaryArray is data for regions, in the same way that we
+// have countryData and countryArray
+var regionSummaryData = {
+};
+var regionSummaryArray = [];
 var regionsMap = {
 };
 var regionArray = {
@@ -527,7 +535,31 @@ var load_data = function(Isocode) {
             }
         });
     });
-    console.log(regionsMap)
+    d3.csv("region_summary.csv", function(error, data) {
+        data
+          .forEach(function(d) {
+              if (!(d.Region in regionSummaryData)) {
+                  regionSummaryData[d.Region] = [];
+              }
+              // create data for map
+              // TODO: change fullData!!!
+              regionSummaryData[d.Region].push({
+                Region: d.Region,
+                Iso: d.Region, // Uses code for plotting countries without modification
+                Country: d.Region, // Uses code for plotting countries without modification
+                Year: +d.Year,
+                Tech: +d.Tech,
+                CO2Total: +d.CarbonTotal,
+                GDPTotal: +d.GDPTotal,
+                CO2: +d.CO2,
+                GDP: +d.GDP,
+                Pop: +d.PopTotal
+              });
+        });
+        for (reg in regionSummaryData) {
+            regionSummaryArray.push(regionSummaryData[reg]);
+        }
+    });
     d3.csv("data_co2.csv", function(error, data) {
           data
             .forEach(function(d) {
@@ -542,7 +574,7 @@ var load_data = function(Isocode) {
                 };
 
                 if (!(d.Isocode in countryData)) {
-                    countryData[d.Isocode] = []
+                    countryData[d.Isocode] = [];
                 }
                 countryData[d.Isocode].push({
                   Iso: d.Isocode,
@@ -659,11 +691,13 @@ d3.select("#reset")
           vary = "Tech";
           logx = false;
           logy = false;
-          region_selected = "All";
+//          region_selected = "All";
+          region_selected = "Summarize-region";
           selectedCountries = [];
           d3.select("#subset-countries")[0][0].disabled = true;
           document.getElementById("x-variable").value = "Year";
-          document.getElementById("region").value = "All";
+//          document.getElementById("region").value = "All";
+          document.getElementById("region").value = "Summarize-region";
           document.getElementById("y-variable").value = "Tech";
           document.getElementById("x-log-scale").checked = false;
           document.getElementById("y-log-scale").checked = false;
