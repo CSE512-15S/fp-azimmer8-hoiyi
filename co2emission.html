@@ -38,10 +38,10 @@
 <body>
 <div id="menu">
         <ul>
-            <li><a href="#">Selece Chart</a>
+            <li><a href="#">Select Chart</a>
 	<ul>
-        <li><a href="#">CO2 Emission</a></li>
         <li><a href="Index.html">CO2 Intensity</a>
+        <li><a href="index_lines.html">Line Chart</a>
         </ul>
         </li>
         </ul>
@@ -50,7 +50,7 @@
 <div id="container">
 <h1> CO2 Emission</h1>  
 <h2> CO2 Emission across Countries from 1960 to 2008  </h2>
-<p id="intro">   This is a map of CO2 intensity (in millions of tonnes of CO2 emissions per 10,000 USD (1990 dollars) economic output) by country by year from 1960 to 2008. CO2 intensity is a measure of carbon emissions that is more consistent across countries of varying levels of wealth than CO2 emissions per person.</p>
+<p id="intro">   This is a map of CO2 emission (in tonnes of CO2 emissions per person by country by year from 1960 to 2008. CO2 intensity is a measure of carbon emissions that is more consistent across countries of varying levels of wealth than CO2 emissions per person.</p>
 
 <p id="intro">Move the slider to select a year for viewing emissions. The light grey color represents missing data.</p>
 
@@ -133,7 +133,7 @@ colorScale = [
   color_q0
 ] // array used to generate color scale
 var quantize = d3.scale.threshold()
-.domain([0.38, 0.68, 0.97, 1.33, 1.91, 2.99, 17.14])
+.domain([0.04, 0.12, 0.30, 0.70, 1.52, 2.52, 27.83])
 .range(d3.range(7).map(function(i) { return "q" + i; }));
 var jsonMilExp = {};
 var map = new Datamap({
@@ -160,7 +160,7 @@ var map = new Datamap({
             return '<div class="hoverinfo"><strong>No data available for ' + geo.properties.name + '</strong></div>';
         } else {
             if (data.CO2) {
-                str_tech =  '<br/>CO2 Intensity: ' + format(data.CO2) + ' million tonnes per $10,000';
+                str_tech =  '<br/>CO2 Emission: ' + format(data.CO2) + ' tonnes per person';
             } else {
                 str_tech = '<br/>CO2 Intensity data missing';
             }
@@ -326,12 +326,18 @@ function createSlider(){
 
   slider = d3.slider()
     .scale( sliderScale )
-    .on("slide",function(event,value){
+    /*.on("slide",function(event,value){
       if ( isPlaying ){
         clearInterval(interval);
       }
-      update_data(period[currentYear]);
-    })
+      update_data(period[val]);
+    })*/
+    .on("slide", function(event, value){
+      if (isPlaying){
+	clearInterval(interval);
+      }
+	update_data(period[value]);
+        d3.select('#clock').html(period[value]);})
     .on("slideend",function(){
       if ( isPlaying ) animateMap();
       d3.select("#slider-div").on("mousemove",sliderProbe)
@@ -348,11 +354,12 @@ function createSlider(){
     .attr("id","slider-div")
     .style("width",500 + "px")
     .on("mousemove", sliderProbe)
-    /*.on("change", function change() {
+    /*.on("slide", function() {
+	console.log('inside slide');
     var Year = this.value;
     update_data(Year);
     d3.select('#clock').html(Year);  // update the clock
-})*/
+})*/    
     .on("mouseout",function(){
       d3.select("#slider-probe").style("display","none");
     })
@@ -371,7 +378,8 @@ function createSlider(){
 });*/
 
 
-d3.selectAll("#slider-div .d3-slider-handle").on("change", function change(){
+d3.selectAll("#slider-div .d3-slider-handle").on("slide", function(){
+	console.log('slider event');
 	var Year = this.value;
         update_data(Year);
 	d3.select('#clock').html(Year);
@@ -395,11 +403,12 @@ function sliderProbe(){
 
 createSlider();
 
-
 var currentYear = 0;
     isPlaying = false;
 
 function animateMap(){
+
+  var currentYear = slider ? slider.value() : 0;
   interval = setInterval( function(){
     currentYear++;
 
@@ -450,9 +459,9 @@ var
   legendBarHeight = 10,
   legendOffsetX = 50,
   legendOffsetY = 500;
-var date = ["2.99" + " - " + "17.14", "1.91" + " - " + "2.99",
-   "1.33" + " - " + "1.91", "0.97" + " - " + "1.33", "0.68" + " - " + "0.97",
-    "0.38" + " - " + "0.68", "0" + " - " + "0.38" ];
+var date = ["2.52" + " - " + "27.83", "1.52" + " - " + "2.52",
+   "0.70" + " - " + "1.52", "0.30" + " - " + "0.70", "0.12" + " - " + "0.30",
+    "0.04" + " - " + "0.12", "0" + " - " + "0.04" ];
 // draw the legend
 d3.select('.legend').selectAll('.legend')
 .data(colorScale)
@@ -485,7 +494,7 @@ d3.select('.legend').selectAll('.legend')
         .data(colorScale)
         .enter()
           .append('text')
-            .text("CO2 Intensity")
+            .text("CO2 Emission")
             .attr("class", "caption")
             .attr('x', legendOffsetX)
             .attr('y', legendOffsetY-0.8)

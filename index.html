@@ -38,16 +38,17 @@
 <body>
 <div id="menu">
         <ul>
-            <li><a href="#">Selece Chart</a>
+            <li><a href="#">Select Chart</a>
 	<ul>
         <li><a href="co2emission.html">CO2 Emission</a></li>
+        <li><a href="index_lines.html">Line Chart</a></li>
         </ul></li>
         </ul>
 </div>
 
 <div id="container">
 <h1> CO2 Emission</h1>  
-<h2> CO2 Emission across Countries from 1960 to 2008  </h2>
+<h2> CO2 Intensity across Countries from 1960 to 2008  </h2>
 <p id="intro">   This is a map of CO2 intensity (in millions of tonnes of CO2 emissions per 10,000 USD (1990 dollars) economic output) by country by year from 1960 to 2008. CO2 intensity is a measure of carbon emissions that is more consistent across countries of varying levels of wealth than CO2 emissions per person.</p>
 
 <p id="intro">Move the slider to select a year for viewing emissions. The light grey color represents missing data.</p>
@@ -324,12 +325,12 @@ function createSlider(){
 
   slider = d3.slider()
     .scale( sliderScale )
-    .on("slide",function(event,value){
-      if ( isPlaying ){
-        clearInterval(interval);
+    .on("slide", function(event, value){
+      if (isPlaying){
+	clearInterval(interval);
       }
-      update_data(period[currentYear]);
-    })
+	update_data(period[value]);
+        d3.select('#clock').html(period[value]);})
     .on("slideend",function(){
       if ( isPlaying ) animateMap();
       d3.select("#slider-div").on("mousemove",sliderProbe)
@@ -398,6 +399,9 @@ var currentYear = 0;
     isPlaying = false;
 
 function animateMap(){
+
+  var currentYear = slider ? slider.value() : 0;
+
   interval = setInterval( function(){
     currentYear++;
 
