@@ -86,6 +86,7 @@ Y Variable:
   <option value="Population">Population</option>
   <option value="GDP">GDP per capita</option>
   <option value="CO2">Carbon emissions</option>
+  <option value="CO2Total">Carbon emissions (total)</option>
 </select>
 Y on log scale? <input id="y-log-scale" type="checkbox" value="log-scale">
 
@@ -94,10 +95,11 @@ Y on log scale? <input id="y-log-scale" type="checkbox" value="log-scale">
 X Variable:
 <select id="x-variable">
   <option value="Year">Year</option>
+  <option value="Tech">Intensity (Carbon / GDP)</option>
   <option value="Population">Population</option>
   <option value="GDP">GDP per capita</option>
   <option value="CO2">Carbon emissions</option>
-  <option value="Tech">Intensity (Carbon / GDP)</option>
+  <option value="CO2Total">Carbon emissions (total)</option>
 </select>
 X on log scale? <input id="x-log-scale" type="checkbox" value="log-scale">
 
@@ -356,7 +358,9 @@ var make_lines = function(varx, vary) {
         } else if (varname === "Population") {
             return "Population (1,000s)"
         } else if (varname === "CO2") {
-            return "Carbon Emissions per capita" // TODO: change!!!
+            return "Carbon Emissions per capita (tonnes carbon)" // TODO: change!!!
+        } else if (varname === "CO2Total") {
+            return "Carbon Emissions (megatonnes carbon)" // TODO: change!!!
         } else {
             return varname
         }
@@ -549,7 +553,7 @@ var load_data = function(Isocode) {
                 Country: d.Region, // Uses code for plotting countries without modification
                 Year: +d.Year,
                 Tech: +d.Tech,
-                CO2Total: +d.CarbonTotal,
+                CO2Total: +d.CarbonTotal / Math.pow(10,6),
                 GDPTotal: +d.GDPTotal,
                 CO2: +d.CO2,
                 GDP: +d.GDP,
@@ -583,7 +587,8 @@ var load_data = function(Isocode) {
                   Tech: +d.Tech,
                   GDP: +d.GDP,
                   Population: +d.PopTotal,
-                  CO2: +d.CO2
+                  CO2: +d.CO2,
+                  CO2Total: d.CO2 * (1000*d.PopTotal) / Math.pow(10, 6)
                 });
               });
         //make_scatter(fullData[Year]);
