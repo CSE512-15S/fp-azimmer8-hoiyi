@@ -13,7 +13,18 @@
         top: 5px;
         left: 30px;
     }
-    
+
+    /*#container1 {
+        margin:10px 10%;
+        border:2px solid #000;
+        border-radius: 5px;
+        width: 600px
+        height:450px;
+        overflow:hidden;
+        background: #F0F8FF;
+    }*/
+
+      
     /*#play {
         position: relative;
         top: 25px;
@@ -79,17 +90,25 @@
  <!--<input id="slider",class="slider" type="range" min="1960" max="2008" value="1960" step="1" herf="slider.css" />-->
 </div>
  <!--<div id="slider-div"></div>-->
- <div id="container1" style="position: relative; width: 80%; max-height: 450px;"></div>
+ <div id="container1" style="position: relative; left: 50px; width: 80%; height: 50%"></div>
+ Zoom enabled? <input id="enabled" type="checkbox" checked>
+ Zoom factor: <input id="factor" type="text" value="0.9">
 <!--<div id="wrapper">
     <button id = "play">play</button>
 </div> -->   
 
   <script src="http://d3js.org/d3.v3.min.js"></script>
   <script src="http://d3js.org/topojson.v1.min.js"></script>
-  <!-- <script src="http://datamaps.github.io/scripts/datamaps.world.min.js?v=1"></script>-->
-  <script src="http://datamaps.github.io/scripts/datamaps.world.min.js"></script>
+  <script src="http://datamaps.github.io/scripts/datamaps.world.min.js?v=1"></script>
+  <!--<script src="http://datamaps.github.io/scripts/datamaps.world.min.js"></script>-->
   <!--<script src="https://raw.github.com/fryn/html5slider/master/html5slider.js"></script>-->
+  <!--<script src="https://raw.githubusercontent.com/markmarkoh/datamaps/master/dist/datamaps.world.min.js"></script>-->
   <script src="d3.slider.js"></script>
+  <script src="http://d3js.org/topojson.v1.min.js"></script>
+  <script src="http://d3js.org/d3.geo.projection.v0.min.js"></script>
+  <!--<script src="zoom.js"></script>-->
+  <script src="topojson.js"></script>
+  <!--<script src="dd3.js"></script>
   <!--<script type="text/javascript"></script>-->
   
 
@@ -109,9 +128,41 @@ var width = 960,
 
 var format = d3.format(",");
 
+/*var zoomFactor = 0.9,
+              enabled = true;
+
+          document.getElementById('factor').addEventListener('change', function (e) {
+            zoomFactor = Number(e.target.value);
+            election.options.zoomConfig.zoomFactor = zoomFactor;
+          })
+
+          document.getElementById('enabled').addEventListener('change', function (e) {
+            enabled = !enabled;
+            election.toggleZoom(enabled);
+          })*/
+
+
+/*var zoom = d3.behavior.zoom()
+    .scaleExtent([1,9])
+    .on("zoom", move);*/
+
+/*var zoom = d3.behavior.zoom()
+    .on("zoom",function() {
+        g.attr("transform","translate("+ 
+            d3.event.translate.join(",")+")scale("+d3.event.scale+")");
+        g.selectAll("circle")
+            .attr("d", path.projection(projection));
+        g.selectAll("path")  
+            .attr("d", path.projection(projection)); 
+
+  });*/
+
+//svg.call(zoom)
+
 //animateMap();
 
 var currentYear = 1960, playing = false;
+
 
 var
 color_qmissing = '#ede4e4'
@@ -135,10 +186,61 @@ var quantize = d3.scale.threshold()
 .domain([0.38, 0.68, 0.97, 1.33, 1.91, 2.99, 17.14])
 .range(d3.range(7).map(function(i) { return "q" + i; }));
 var jsonMilExp = {};
+
+
+/*var zoomFactor = 0.9,
+              enabled = true;
+
+          document.getElementById('factor').addEventListener('change', function (e) {
+            zoomFactor = Number(e.target.value);
+            election.options.zoomConfig.zoomFactor = zoomFactor;
+          })
+
+          document.getElementById('enabled').addEventListener('change', function (e) {
+            enabled = !enabled;
+            election.toggleZoom(enabled);
+          })*/
+
+
 var map = new Datamap({
-  element: document.getElementById('container1'),
-  projection: 'mercator',
-  fills: {
+  element: document.getElementById("container1"),
+  scope: 'world',
+  setProjection: function(element) {
+    var projection = d3.geo.robinson()
+      .center([19, -3])
+      .rotate([4.4, 0])
+      .scale(250)
+      .translate([element.offsetWidth / 2, element.offsetHeight / 2]);
+    var path = d3.geo.path()
+      .projection(projection);
+    /*var svg = d3.select("body").append("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+    var g = svg.append("g");*/
+        
+      /*g.selectAll("path")
+      .data(topojson.object(topology, topology.objects.countries)
+          .geometries)
+          .enter()
+      .append("path")
+      .attr("d", path)*/
+
+/*var zoom = d3.behavior.zoom()
+    .on("zoom",function() {
+        g.attr("transform","translate("+ 
+            d3.event.translate.join(",")+")scale("+d3.event.scale+")");
+        g.selectAll("circle")
+            .attr("d", path.projection(projection));
+        g.selectAll("path")  
+            .attr("d", path.projection(projection)); 
+});
+    svg.call(zoom);*/
+
+    
+    return {path: path, projection: projection};
+  },
+    fills: {
     defaultFill: color_qmissing,
     qmissing: color_qmissing,
     q0: color_q0,
@@ -149,6 +251,13 @@ var map = new Datamap({
     q5: color_q5,
     q6: color_q6
   },
+  done: function(datamap) {
+           datamap.svg.call(d3.behavior.zoom().on("zoom", redraw));
+
+           function redraw() {
+                datamap.svg.selectAll("g").attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+           }
+        },
   data: jsonMilExp,
   geographyConfig: {
      //highlightOnHover: False,
@@ -182,8 +291,13 @@ var map = new Datamap({
 }
 },
   highlightBorderWidth: 4,
-  responsive: true
+  responsive: true,
 });
+
+                                               
+
+
+
 var fullData = {
     1960: {},
     1961: {},
@@ -267,6 +381,12 @@ var load_data = function(Year) {
             }
         }
         map.updateChoropleth(fullData[Year]);
+       /* g.selectAll("path")
+      .data(topojson.object(topology, topology.objects.countries)
+          .geometries)
+      .enter()
+      .append("path")
+      .attr("d", path)*/
     });   
 };
 var update_data = function(Year) {
@@ -281,39 +401,6 @@ var sliderMargin = 65;
 
 var period = [];
 for (var i = 1960; i != 2011; ++i) period.push(i);
-
-/*function animateMap() {
-
-  var timer;  // create timer object
-  d3.select('#play')  
-    .on('click', function() {  // when user clicks the play button
-      if(playing == false) {  // if the map is currently playing
-        timer = setInterval(function(){   // set a JS interval
-          if(currentYear < period.length-1) {  
-              currentYear += 1;  // increment the current attribute counter
-          } else {
-              currentYear = 0;  // or reset it to zero
-          } 
-          update_data(period[currentYear]);
-
-          d3.select('#clock').html(period[currentYear]);  // update the clock
-          //d3.select("slider-div .d3-slider-handle")
-          //.style("left", 100*currentYear/period.length +"%");
-          //slider.value(currentYear);
-        }, 1000);
-        //d3.select("#slider-div .d3-slider-handle")
-        //.style("left", 100*currentYear/period.length + "%" );
-        //slider.value(currentYear);
-
-        d3.select(this).html('stop');  // change the button label to stop
-        playing = true;   // change the status of the animation
-      } else {    // else if is currently playing
-        clearInterval(timer);   // stop the animation by clearing the interval
-        d3.select(this).html('play');   // change the button label to play
-        playing = false;   // change the status again
-      };
-  });
-}*/
 
 var interval;
 
