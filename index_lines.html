@@ -37,6 +37,20 @@
     opacity: 1.0;
 }
 
+.basic-countries {
+    font-family: sans-serif;
+    opacity: 0.5;
+    font-size: 11px;
+    fill: #444;
+}
+.highlighted-countries {
+    font-family: sans-serif;
+    opacity: 0.8;
+    font-size: 11px;
+    font-weight: bold;
+    fill: #444;
+}
+
 .extent {
     fill: #000;
     fill-opacity: .25;
@@ -273,7 +287,6 @@ var make_lines = function(varx, vary) {
     }
  
 
-    // todo: allow for log scale
     if (logx) {
         var x = d3.scale.log()
                   .domain(xdomain)
@@ -284,7 +297,6 @@ var make_lines = function(varx, vary) {
                   .range([padding_left, w - padding_right]);
     }
 
-// TODO: fix up log scale. make optional, make the range based on the data, put in axis labels
     if (logy) {
         var y = d3.scale.log()
                   .domain(ydomain)
@@ -295,7 +307,6 @@ var make_lines = function(varx, vary) {
                   .range([h - padding_h, padding_h/2]);
     }
 
-    // TODO: allow the variable to be selected
     var line = d3.svg.line()
         .defined(function(d) { return (!isNaN(d[vary])) && (!isNaN(d[varx])); })
         .x(function(d) { return x(d[varx]); })
@@ -371,8 +382,6 @@ var make_lines = function(varx, vary) {
             return varname
         }
    };
-
-//TODO: fix the removal
     if (varx === "Year") {
         for (var i = 0; i < dataset.length; i++) {
             var xPosition = x(2010.5);
@@ -381,20 +390,27 @@ var make_lines = function(varx, vary) {
                 // Use 2008 data
                 yPosition = y(dataset[i][dataset[i].length-3][vary]) + 3;
             }
+            var tooltip_id = "tooltip" + dataset[i][0].Country;
+            tooltip_id = tooltip_id.replace(/ /g, '') // Strip spaces
+                                   .replace(/\./g, ''); // Strip period
             svg.append("text")
-               .attr("id", "tooltip")
+               //.attr("id", "tooltip")
+               .attr("id", tooltip_id)
                .attr("x", xPosition)
                .attr("y", yPosition)
                .attr("text-anchor", "start")
-               .attr("opacity", 0.8)
+               .attr("class", "country-names")
+               .attr("class", "basic-countries")
+               /*
+               .attr("opacity", 0.6)
                .attr("font-family", "sans-serif")
                .attr("font-size", "11px")
                .attr("font-weight", "bold")
                .attr("fill", "#444")
+               */
                .text(dataset[i][0].Country);
         }
     }
-
 // add x-axis label:
     svg.append("text")
        .attr("class", "x-label")
@@ -503,9 +519,6 @@ var make_lines = function(varx, vary) {
         }
     }
 
-// TODO: remove conflict between brush and mouseover!!!
-// TODO: save clicked countries.
-
 // Brush taken from http://bl.ocks.org/mbostock/4063663
   var brush = d3.svg.brush()
       .x(xScale)
@@ -520,7 +533,13 @@ var make_lines = function(varx, vary) {
      .call(brush);
   // Clear the previously-active brush, if any.
   function brushstart() {
-    console.log("brush starting!")
+    //console.log("brush starting!")
+    selectedCountries = [];
+    svg.selectAll(".highlighted-text")
+       .classed("basic-countries", true)
+       .classed("highlighted-text", false);
+
+    svg.selectAll("path:not(.hidden)").classed("hidden", true);
     brush.clear()
   }
 
@@ -532,8 +551,24 @@ var make_lines = function(varx, vary) {
         for (var i = 0, linelen = d.length; i < linelen; i++) {
             if (e[0][0] < d[i][varx] && d[i][varx] < e[1][0]
              && e[0][1] < d[i][vary] && d[i][vary] < e[1][1]) {
+                if (varx === "Year") {
+                    var tooltip_id = "#tooltip" + d[0].Country;
+                    tooltip_id = tooltip_id.replace(/ /g, '') // Strip spaces
+                                           .replace(/\./g, ''); // Strip period
+                    svg.selectAll(tooltip_id)
+                       .classed("basic-countries", false)
+                       .classed("highlighted-text", true);
+                }
                 return false;
             }
+        }
+        if (varx === "Year" && d.constructor === Array) {
+            var tooltip_id = "#tooltip" + d[0].Country;
+            tooltip_id = tooltip_id.replace(/ /g, '') // Strip spaces
+                                   .replace(/\./g, ''); // Strip period
+            svg.selectAll(tooltip_id)
+               .classed("basic-countries", true)
+               .classed("highlighted-text", false);
         }
         return true;
     });
@@ -551,9 +586,15 @@ var make_lines = function(varx, vary) {
       if (selectedCountries.length > 0 &&
           region_selected !== "Summarize-region") {
           d3.select("#subset-countries")[0][0].disabled = false;
+      } else if (selectedCountries.length > 0) {
+          d3.select("#subset-countries")[0][0].disabled = true;
       } else {
+          svg.selectAll(".highlighted-text")
+             .classed("basic-countries", true)
+             .classed("highlighted-text", false);
           d3.select("#subset-countries")[0][0].disabled = true;
       }
+
     if (brush.empty()) svg.selectAll(".hidden").classed("hidden", false);
   }
   context.append("g")
@@ -573,19 +614,25 @@ var make_lines = function(varx, vary) {
        .attr("class", "line")
        .attr("d", line)
        .attr("id", function(d) {
-                //console.log(d[0]["Iso"]);
                 return d[0]["Iso"]
              })
-      // fixing below still
        .on("mouseover", function(d) {
-           console.log("moused over");
-           // todo: change position of tooltip type thing
+           //console.log("moused over");
            var xPosition = w/2;
            var yPosition = 20;
 
            d3.select(this)
              .moveToFront()
              .classed("mousedover", true);
+
+           if (varx === "Year") {
+               var tooltip_id = "#tooltip" + d[0].Country;
+               tooltip_id = tooltip_id.replace(/ /g, '') // Strip spaces
+                                      .replace(/\./g, ''); // Strip period
+               svg.selectAll(tooltip_id)
+                  .classed("basic-countries", false)
+                  .classed("highlighted-text", true);
+           }
 
            svg.append("text")
               .attr("id", "tooltip-hover")
@@ -601,7 +648,7 @@ var make_lines = function(varx, vary) {
        .on("mousedown", function() {
            // So that brushing works when you're on top of a line
            // Based on https://wrobstory.github.io/2013/11/D3-brush-and-tooltip.html
-           console.log("mousedown");
+           //console.log("mousedown");
            brush_elm = svg.select(".brush").node();
            new_click_event = new Event('mousedown');
            new_click_event.pageX = d3.event.pageX;
@@ -610,8 +657,17 @@ var make_lines = function(varx, vary) {
            new_click_event.clientY = d3.event.clientY;
            brush_elm.dispatchEvent(new_click_event);
        })
-       .on("mouseout", function() {
-           console.log("mouseout detected");
+       .on("mouseout", function(d) {
+           if (varx === "Year") {
+               var tooltip_id = "#tooltip" + d[0].Country;
+               tooltip_id = tooltip_id.replace(/ /g, '') // Strip spaces
+                                      .replace(/\./g, ''); // Strip period
+               svg.selectAll(tooltip_id)
+                  .classed("basic-countries", true)
+                  .classed("highlighted-text", false);
+           }
+
+           //console.log("mouseout detected");
            d3.select(this)
              .classed("mousedover", false);
 
