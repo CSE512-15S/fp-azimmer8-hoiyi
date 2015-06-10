@@ -57,11 +57,13 @@ h1,h2,h3 {
     height:30px;
 }
 
-.axis text {
-    font-family: sans-serif;
-    font-size: 11px;
-    color: red;
+.x-label {
+    font-size: 18px;
 }
+.y-label {
+    font-size: 18px;
+}
+
 </style>
 </head>
 <body>
@@ -187,9 +189,9 @@ d3.selection.prototype.moveToFront = function() {
 
 
 var make_lines = function(varx, vary) {
+    svg.selectAll("circle").remove();
     d3.select("#subset-countries")[0][0].disabled = true;
     if (region_selected === "Subset-countries") {
-        // TODO
         dataset = []
         for (var i = 0; i < selectedCountries.length; i++) {
             dataset.push(countryData[selectedCountries[i]]);
@@ -408,6 +410,97 @@ var make_lines = function(varx, vary) {
 
     svg.selectAll(".line")
        .remove();
+    if (varx !== "Year" && vary !== "Year") {
+        svg.selectAll("circle")
+           .remove();
+        // create small dataset
+        start_dataset = [];
+        for (var i = 0; i < dataset.length; i++) {
+            var indx = 0;
+// while either variable is missing, skip to next year
+// 1973 is to handle a special case with Former USSR data
+            while (isNaN(dataset[i][indx][varx]) ||
+                   isNaN(dataset[i][indx][vary]) ||
+                   dataset[i][indx]["Year"] === 1973) {
+                indx++;
+                if (indx === dataset[i].length) {
+                    break;
+                }
+            }
+            var country_start_tmp = {};
+            country_start_tmp[varx] = dataset[i][indx][varx];
+            country_start_tmp[vary] = dataset[i][indx][vary];
+            start_dataset.push(country_start_tmp);
+        }
+        end_dataset = [];
+        for (var i = 0; i < dataset.length; i++) {
+            var indx = dataset[i].length - 1;
+// while either variable is missing, skip to next year
+            while (isNaN(dataset[i][indx][varx]) ||
+                   isNaN(dataset[i][indx][vary])) {
+                indx--;
+                if (indx === 0) {
+                    break;
+                }
+            }
+            var country_end_tmp = {};
+            country_end_tmp[varx] = dataset[i][indx][varx];
+            country_end_tmp[vary] = dataset[i][indx][vary];
+            country_end_tmp["Year"] = dataset[i][indx]["Year"];
+            end_dataset.push(country_end_tmp);
+        }
+
+        svg.selectAll("circle.start")
+           .data(start_dataset)
+           .enter()
+           .append("circle")
+           .attr({
+               cx: function(d) {
+                   return xScale(d[varx]);
+               },
+               cy: function(d) {
+                   return yScale(d[vary]);
+               },
+               r: 3,
+               fill: "#f1a340"
+           });
+        svg.selectAll("circle.end")
+           .data(end_dataset)
+           .enter()
+           .append("circle")
+           .attr({
+               cx: function(d) {
+                   return xScale(d[varx]);
+               },
+               cy: function(d) {
+                   return yScale(d[vary]);
+               },
+               r: 6,
+               fill: "#998ec3"
+           });
+
+        svg.selectAll("text")
+           .data(end_dataset)
+           .enter()
+        for (var i = 0; i < end_dataset.length; i++) {
+          var d = end_dataset[i];
+          console.log(d);
+          svg.append("text")
+           .attr({
+                  x: xScale(d[varx]),
+                  y: yScale(d[vary])
+            })
+           .attr("text-anchor", "start")
+           .attr("font-family", "sans-serif")
+           .attr("opacity", "0.55")
+           .attr("font-size", "11px")
+           .attr("fill", "black")
+           .text(d.Year);
+        }
+    }
+
+// TODO: add color rainbow if not many lines!!
+
     svg.selectAll(".line")
        .data(dataset)
        .enter()
