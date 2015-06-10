@@ -32,10 +32,14 @@
     stroke: grey;
     opacity: 0.4;
 }
+.mousedover {
+    stroke: orange;
+    opacity: 1.0;
+}
 
 .extent {
     fill: #000;
-    fill-opacity: .05;
+    fill-opacity: .25;
     stroke: #fff;
 }
 
@@ -499,55 +503,9 @@ var make_lines = function(varx, vary) {
         }
     }
 
-// TODO: add color rainbow if not many lines!!
-
-    svg.selectAll(".line")
-       .data(dataset)
-       .enter()
-       .append("path")
-       .attr("class", "line")
-       .attr("d", line)
-       .attr("id", function(d) {
-                //console.log(d[0]["Iso"]);
-                return d[0]["Iso"]
-             })
-      // fixing below still
-       .on("mouseover", function(d) {
-           console.log("moused over");
-           // todo: change position of tooltip type thing
-           var xPosition = w/2;
-           var yPosition = 20;
-
-           d3.select(this)
-             .moveToFront()
-             .style("opacity", "1")
-             .style("stroke", "orange");
-
-           svg.append("text")
-              .attr("id", "tooltip-hover")
-              .attr("x", xPosition)
-              .attr("y", yPosition)
-              .attr("text-anchor", "middle")
-              .attr("font-family", "sans-serif")
-              .attr("font-size", "12px")
-              .attr("font-weight", "bold")
-              .attr("fill", "orange")
-              .text("Country: " + d[0].Country);
-       })
-       .on("mouseout", function() {
-           console.log("mouseout detected");
-           d3.select(this)
-             .style("opacity", "0.7")
-             .style("stroke", "steelblue");
-
-           d3.select("#tooltip-hover").remove();
-       });
-
 // TODO: remove conflict between brush and mouseover!!!
 // TODO: save clicked countries.
 
-/*
-// todo: include a line if part of a segment falls in the brush box.
 // Brush taken from http://bl.ocks.org/mbostock/4063663
   var brush = d3.svg.brush()
       .x(xScale)
@@ -556,8 +514,10 @@ var make_lines = function(varx, vary) {
       .on("brush", brushmove)
       .on("brushend", brushend);
 
-    svg.call(brush);
-
+//  svg.call(brush);
+  svg.append("g")
+     .attr("class", "brush")
+     .call(brush);
   // Clear the previously-active brush, if any.
   function brushstart() {
     console.log("brush starting!")
@@ -584,9 +544,12 @@ var make_lines = function(varx, vary) {
       var selectedLines = svg.selectAll("path:not(.hidden)").data();
       selectedCountries = [];
       for (var i = 0; i < selectedLines.length; i++) {
-          selectedCountries.push(selectedLines[i][0]["Iso"]);
+          if (selectedLines[i].constructor === Array) {
+              selectedCountries.push(selectedLines[i][0]["Iso"]);
+          }
       }
-      if (selectedCountries.length > 0) {
+      if (selectedCountries.length > 0 &&
+          region_selected !== "Summarize-region") {
           d3.select("#subset-countries")[0][0].disabled = false;
       } else {
           d3.select("#subset-countries")[0][0].disabled = true;
@@ -599,7 +562,61 @@ var make_lines = function(varx, vary) {
     .selectAll("rect")
       .attr("y", -6)
       .attr("height", h+ 7);
-*/
+
+
+// TODO: add color rainbow if not many lines!!
+
+    svg.selectAll(".line")
+       .data(dataset)
+       .enter()
+       .append("path")
+       .attr("class", "line")
+       .attr("d", line)
+       .attr("id", function(d) {
+                //console.log(d[0]["Iso"]);
+                return d[0]["Iso"]
+             })
+      // fixing below still
+       .on("mouseover", function(d) {
+           console.log("moused over");
+           // todo: change position of tooltip type thing
+           var xPosition = w/2;
+           var yPosition = 20;
+
+           d3.select(this)
+             .moveToFront()
+             .classed("mousedover", true);
+
+           svg.append("text")
+              .attr("id", "tooltip-hover")
+              .attr("x", xPosition)
+              .attr("y", yPosition)
+              .attr("text-anchor", "middle")
+              .attr("font-family", "sans-serif")
+              .attr("font-size", "12px")
+              .attr("font-weight", "bold")
+              .attr("fill", "orange")
+              .text("Country: " + d[0].Country);
+       })
+       .on("mousedown", function() {
+           // So that brushing works when you're on top of a line
+           // Based on https://wrobstory.github.io/2013/11/D3-brush-and-tooltip.html
+           console.log("mousedown");
+           brush_elm = svg.select(".brush").node();
+           new_click_event = new Event('mousedown');
+           new_click_event.pageX = d3.event.pageX;
+           new_click_event.clientX = d3.event.clientX;
+           new_click_event.pageY = d3.event.pageY;
+           new_click_event.clientY = d3.event.clientY;
+           brush_elm.dispatchEvent(new_click_event);
+       })
+       .on("mouseout", function() {
+           console.log("mouseout detected");
+           d3.select(this)
+             .classed("mousedover", false);
+
+           d3.select("#tooltip-hover").remove();
+       });
 };
 
 
