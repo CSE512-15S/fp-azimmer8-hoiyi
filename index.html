@@ -6,44 +6,13 @@
 <link rel="stylesheet" href="slider.css"/>
 </head>
 
-<title> Global Warming Data </title>
+<title> CO2 Emission Data </title>
 <style>
     #clock {
         position: relative;
         top: 5px;
         left: 30px;
     }
-
-    /*#container1 {
-        margin:10px 10%;
-        border:2px solid #000;
-        border-radius: 5px;
-        width: 600px
-        height:450px;
-        overflow:hidden;
-        background: #F0F8FF;
-    }*/
-
-      
-    /*#play {
-        position: relative;
-        top: 25px;
-        left: 400px
-    }
-
-    #play {
-        left: 240px;
-    }
-
-    #clock {
-        position: relative;
-    }
-  
-    .d3-slider{
-	width: 400px;
-	margin-left:10px;
-	margin-right:auto;
-	}*/
 	
   </style>
 <body>
@@ -67,13 +36,9 @@
 <p id="intro">Demographic variables relevant to CO2 emissions, such as GDP and population size, are shown when hovering over a country.</p>
 </div>
 
-<!--<div class="d3-slider">
-<link rel="stylesheet" href="slider.css" />-->
-<!--<div id="year">  
-  <p> CO2 Emission for Year: <p>
-  <span id="clock" style="color:#f6931f; font-weight:bold; font-size:24px" >1960</span>
-</div>-->
- <!--<label for="slider" >CO2 Emission for Year: </label>-->
+
+<img src="legend1.png" style="position: absolute; left: 1200px; top: 400px; width:130px; height:180px;">
+
 <div id="date">
   <p> CO2 Emission for Year: <p>
   <span id="clock" style="color:#f6931f; font-weight:bold; font-size:24px" >1960</span>
@@ -91,8 +56,8 @@
 </div>
  <!--<div id="slider-div"></div>-->
  <div id="container1" style="position: relative; left: 50px; width: 80%; height: 50%"></div>
- Zoom enabled? <input id="enabled" type="checkbox" checked>
- Zoom factor: <input id="factor" type="text" value="0.9">
+ <!--Zoom enabled? <input id="enabled" type="checkbox" checked>
+ Zoom factor: <input id="factor" type="text" value="0.9">-->
 <!--<div id="wrapper">
     <button id = "play">play</button>
 </div> -->   
@@ -213,30 +178,6 @@ var map = new Datamap({
       .translate([element.offsetWidth / 2, element.offsetHeight / 2]);
     var path = d3.geo.path()
       .projection(projection);
-    /*var svg = d3.select("body").append("svg")
-      .attr("width", width)
-      .attr("height", height);
-
-    var g = svg.append("g");*/
-        
-      /*g.selectAll("path")
-      .data(topojson.object(topology, topology.objects.countries)
-          .geometries)
-          .enter()
-      .append("path")
-      .attr("d", path)*/
-
-/*var zoom = d3.behavior.zoom()
-    .on("zoom",function() {
-        g.attr("transform","translate("+ 
-            d3.event.translate.join(",")+")scale("+d3.event.scale+")");
-        g.selectAll("circle")
-            .attr("d", path.projection(projection));
-        g.selectAll("path")  
-            .attr("d", path.projection(projection)); 
-});
-    svg.call(zoom);*/
-
     
     return {path: path, projection: projection};
   },
@@ -531,6 +472,12 @@ function animateMap(){
 
 
 // append the container for the legend
+/*d3.select("#legend")
+    .append("svg")
+    .append("g")
+    .attr("class", "legend");
+                  
+
 d3.select('svg')
   .append('g')
   .attr('class', 'legend');
@@ -580,7 +527,7 @@ d3.select('.legend').selectAll('.legend')
             .attr('y', legendOffsetY-0.8)
             .attr("font-family", "sans-serif")
             .attr("font-size", "12px")
-            .attr("fill", "black");           
+            .attr("fill", "black");  */         
 //window.onload = animateMap();
 //animateMap();
 
