@@ -8,6 +8,8 @@ Hoiyi Ng (hoiyi@uw.edu)
 ### Development Process
 Getting up to speed in D3 took a large amount of time, but we were helped out by A3. Hoiyi spent a large amount of time trying to coordinate the slider and play button for the maps. Alec ended up spending a good amount of time coordinating different interactive parts of the code - making sure that things would reset properly when the page is refreshed, that mousing out from a hover will return a line to its previous color rather than a set one (in case a line is excluded by a brush), etc. Alec also spent a decent amount of time trying to restructure data into the format that supported the task at hand.
 
+For making the line maps, the plan of making line charts and allowing selection of different variables was in place from the start. After making those, the biggest issue with them was dealing with the excess of data as lines crowded out each other. The rest of the development process for the line charts focused on increasing readability: adding multiple region options, hovering to display country names, and brushing to subset the data.
+
 Our visualization is a combined effort of Alec and Hoiyi with Alec focusing on creating line charts and Hoiyi extending the maps from our A3 submission. The work distribution can be briefly broken down as follows:
 
 Maps: Primarily Hoiyi
