@@ -1,21 +1,22 @@
 # fp-azimmer8-hoiyi
 
-# Team Members
-Alec Zimmer (azimmer8)
-Hoiyi Ng (hoiyi)
+# Projecting Carbon Emissions
+Alec Zimmer (azimmer8@uw.edu)
+Hoiyi Ng (hoiyi@uw.edu)
 
-# CO2 Emissions Worldwide
-Our visualization displays levels of CO2 intensity (CO2 emissions per economic output) across countries from 1960 to 2010.
+# Abstract (from paper):
+
+The goal of our visualization is to display how carbon emissions of different countries change over time. Our primary users are scientists and researchers who want to use the data to quickly gain a sense of overall carbon trends and patterns over the past 50 years worldwide, and how they relate to population size and economic output. By allowing users to interact with animated world maps and line charts, our visualization encourages researchers to develop scientific questions and specific analyses. In this paper, we will discuss related work that inspired our choice of visualization and details of our work. 
+
+[Poster](poster-azimmer8-hoiyi.pdf) [Paper](paper-azimmer8-hoiyi.pdf)
 
 # Running Instructions
-Download the files to a folder and run index.html (though not through Chrome since it won't load in the data).
-
-# Story Board
-See the [storyboard](storyboard.pdf). This also includes our final writeup. One thing we were unable to fix is that the data does not display on being loaded; one has to move the slider first for data to display.
+Download the files to a folder and run index.html which will bring up the map (though not through Chrome since it won't load in the data). The drop-down menu at the right can be used to switch between the two maps and the line chart. The line chart can be opened directly by running index_lines.html.
 
 # Development Process
-Our visualization is a combined effort of Alec and Hoiyi with Alec focusing on creating line charts and Hoiyi focusing on improving users' experience with the maps. The work distribution can be briefly broken down as follows:
+Our visualization is a combined effort of Alec and Hoiyi with Alec focusing on creating line charts and Hoiyi extending the maps from our A3 submission. The work distribution can be briefly broken down as follows:
 
+Maps: Primarily Hoiyi
 * World maps - Hoiyi
 * Getting initial map displayed - Hoiyi and Alec
 * Loading in the data - Hoiyi and Alec
@@ -25,15 +26,16 @@ Our visualization is a combined effort of Alec and Hoiyi with Alec focusing on c
 * Slider - Hoiyi
 * Map animation - Hoiyi
 * Zooming - Hoiyi
+* Speeding up data access to update immediately - Alec
 * Hover style - Hoiyi
 * Dropdown menu - Hoiyi
-* Line charts - Alec
-* Speeding up data access to update immediately - Alec
-* Organization/setting up github/coordinating code - Alec
-*
-*
-*
-*
+
+Line charts: Alec
+* Line charts and interactivity - Alec
+
+Other:
+* Organization/setting up github/formatting submission - Alec
+* Project proposal - Alec
+* Progress presentation - mostly Alec
+* Poster - mostly Hoiyi
 * Final project paper - Alec and Hoiyi
-
-
